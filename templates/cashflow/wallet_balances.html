@@ -1,0 +1,24 @@
+<!-- cashflow/templates/cashflow/wallet_balances.html -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Баланс по кошелькам</title>
+</head>
+<body>
+    <h1>Баланс по кошелькам</h1>
+    <table border="1">
+        <tr>
+            <th>Кошелёк</th>
+            <th>Баланс</th>
+        </tr>
+        {% for w in wallets %}
+        <tr>
+            <!-- w['wallet__name'] и w['balance'] зависят от того, как вы формируете .values() -->
+            <td>{{ w.wallet__name }}</td>
+            <td>{{ w.balance }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
