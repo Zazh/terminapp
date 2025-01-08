@@ -1,0 +1,178 @@
+<!-- cashflow/templates/cashflow/dashboard.html -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <title>Dashboard</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 800px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f5f5f5;
+        }
+        .total-row {
+            font-weight: bold;
+        }
+        .container {
+            width: 90%;
+            margin: 0 auto;
+            font-family: sans-serif;
+        }
+        h1, h2 {
+            margin-top: 40px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <!-- 1. Сводный отчёт по видам деятельности -->
+    <h1>Сводный отчёт по движениям денежных средств (Cash Flow) [Виды деятельности]</h1>
+    {% if cashflow_data %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Вид деятельности</th>
+                    <th>Доход</th>
+                    <th>Расход</th>
+                    <th>Чистый поток</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in cashflow_data.details %}
+                    <tr>
+                        <td>{{ row.activity_type }}</td>
+                        <td>{{ row.income }}</td>
+                        <td>{{ row.expense }}</td>
+                        <td>{{ row.net_flow }}</td>
+                    </tr>
+                {% endfor %}
+                {% if cashflow_data.total %}
+                    <tr class="total-row">
+                        <td>{{ cashflow_data.total.activity_type }}</td>
+                        <td>{{ cashflow_data.total.income }}</td>
+                        <td>{{ cashflow_data.total.expense }}</td>
+                        <td>{{ cashflow_data.total.net_flow }}</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Нет данных для отображения по видам деятельности.</p>
+    {% endif %}
+
+    <!-- 2. Сводный отчёт по кошелькам -->
+    <h2>Сводный отчёт по кошелькам</h2>
+    {% if wallet_data %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Кошелёк</th>
+                    <th>Баланс</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for w in wallet_data %}
+                    <tr>
+                        <td>{{ w.wallet__name }}</td>
+                        <td>{{ w.balance }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Нет данных по кошелькам.</p>
+    {% endif %}
+
+
+    <!-- 3. Сводка по статьям (категориям) -->
+    <h2>Сводка по статьям</h2>
+    {% if category_data %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Статья (Категория)</th>
+                    <th>Доход</th>
+                    <th>Расход</th>
+                    <th>Чистый поток</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in category_data.details %}
+                    <tr>
+                        <td>{{ row.category }}</td>
+                        <td>{{ row.income }}</td>
+                        <td>{{ row.expense }}</td>
+                        <td>{{ row.net_flow }}</td>
+                    </tr>
+                {% endfor %}
+                {% if category_data.total %}
+                    <tr class="total-row">
+                        <td>{{ category_data.total.category }}</td>
+                        <td>{{ category_data.total.income }}</td>
+                        <td>{{ category_data.total.expense }}</td>
+                        <td>{{ category_data.total.net_flow }}</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Нет данных по статьям.</p>
+    {% endif %}
+
+ <!-- 4. Все транзакции (операции)
+    <h2>Все транзакции</h2>
+    {% if transactions %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Дата</th>
+                    <th>Тип</th>
+                    <th>Категория</th>
+                    <th>Кошелёк</th>
+                    <th>Сумма</th>
+                    <th>Описание</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for t in transactions %}
+                <tr>
+                    <td>{{ t.date }}</td>
+                    <td>{{ t.get_transaction_type_display }}</td>
+                    <td>
+                        {% if t.category %}
+                            {{ t.category.name }}
+                        {% else %}
+                            Без категории
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if t.wallet %}
+                            {{ t.wallet.name }}
+                        {% else %}
+                            Нет кошелька
+                        {% endif %}
+                    </td>
+                    <td>{{ t.amount }}</td>
+                    <td>{{ t.description|default_if_none:"—" }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Нет транзакций для отображения.</p>
+    {% endif %}
+-->
+
+</div>
+</body>
+</html>
