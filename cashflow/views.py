@@ -3,7 +3,7 @@
 from datetime import datetime
 from django.shortcuts import render
 from .models import Wallet, Category
-from .services import get_wallet_balances, get_monthly_in_out, get_cashflow_summary_by_activity, get_cashflow_summary_by_category, get_all_transactions, get_filtered_transactions
+from .services import get_wallet_balances, get_monthly_in_out, get_cashflow_summary_by_activity, get_monthly_cashflow_by_category, get_filtered_transactions, get_activity_category_month_report_12
 
 def transactions_list_view(request):
     """
@@ -123,30 +123,99 @@ def monthly_report_view(request):
     }
     return render(request, 'cashflow/monthly_report.html', context)
 
+MONTH_NAMES = {
+    1: "Январь", 2: "Февраль", 3: "Март",
+    4: "Апрель", 5: "Май", 6: "Июнь",
+    7: "Июль", 8: "Август", 9: "Сентябрь",
+    10: "Октябрь", 11: "Ноябрь", 12: "Декабрь",
+}
+
 def dashboard_view(request):
-    # если есть необходимость фильтра по году:
+    """
+    Основная «дашборд»-вьюха.
+    Получает:
+      - Год из GET (опционально),
+      - Старые отчёты (cashflow_data, wallet_data, monthly_category_data),
+      - Новый pivot-отчёт за последние 12 месяцев (pivot_12_data).
+    Формирует «headers», чтобы в шаблоне красиво отобразить «Месяц Год».
+    """
+    # Опциональный фильтр по году
     year_param = request.GET.get('year')
     if year_param:
         year_param = int(year_param)
     else:
         year_param = None
 
-    # 1. Сводка по видам деятельности
+    # 1. Сводка по видам деятельности (старый отчёт)
     cashflow_data = get_cashflow_summary_by_activity(year=year_param)
 
     # 2. Сводка по кошелькам
     wallet_data = get_wallet_balances()
 
-    # 3. Сводка по статьям (категориям)
-    category_data = get_cashflow_summary_by_category(year=year_param)
+    # 3. Сводка по статьям (категориям) — если ещё нужна
+    monthly_category_data = get_monthly_cashflow_by_category(year=year_param)
 
-    # # 4. Все транзакции (удаляем или комментируем)
-    # transactions = get_all_transactions(year=year_param)
+    # 4. «Pivot»-отчёт за последние 12 месяцев (текущий + 11 предыдущих)
+    pivot_12_data = get_activity_category_month_report_12()
+    #    В нём ожидаем структуру:
+    #    pivot_12_data = {
+    #       "data": [...],
+    #       "periods": [(2024,2), (2024,3), ..., (2025,1)]
+    #    }
 
+    # 5. Сформируем «headers» для шапки таблицы (например, "Февраль 2024")
+    #    Берём список (year, month) из pivot_12_data["periods"]
+    headers = []
+    if "periods" in pivot_12_data:
+        for (y, m) in pivot_12_data["periods"]:
+            month_name = MONTH_NAMES.get(m, f"Месяц {m}")
+            headers.append(f"{month_name} {y}")
+    else:
+        # На случай если periods пуст, чтобы не упасть с ошибкой
+        headers = []
+
+    # Итоговый контекст
     context = {
-        'cashflow_data': cashflow_data,     # данные по activity
-        'wallet_data': wallet_data,         # данные по кошелькам
-        'category_data': category_data,     # данные по категориям
-        # 'transactions': transactions,     # убираем из контекста
+        'cashflow_data': cashflow_data,
+        'wallet_data': wallet_data,
+        'monthly_category_data': monthly_category_data,
+        # 'months_list': months_list,  # <- если не используете, можно убрать
+        'pivot_12_data': pivot_12_data,
+        'headers': headers,  # <-- передаём заголовки для таблицы
     }
     return render(request, 'cashflow/dashboard.html', context)
+
+def get_last_12_year_months():
+    """
+    Возвращает список (year, month) для последних 12 месяцев,
+    включая текущий месяц (сначала самый старый).
+    Пример: если сейчас январь 2025, вернёт:
+      [
+        (2024, 2), (2024, 3), ..., (2025, 1)
+      ]
+    """
+    today = datetime.date.today()
+    year_months = []
+    # Начинаем с 11 месяцев назад до 0 месяцев (текущий)
+    for i in range(11, -1, -1):
+        # вычисляем нужный год и месяц
+        past_date = _add_months(today, -i)
+        year_months.append((past_date.year, past_date.month))
+    return year_months
+
+def _add_months(base_date, months):
+    """
+    Утилита: прибавляет (или вычитает) из base_date заданное число месяцев.
+    При отрицательном months = -x уходит x месяцев назад.
+    """
+    year = base_date.year
+    month = base_date.month + months  # может стать < 1 или > 12
+    # нормализуем год и месяц
+    while month < 1:
+        month += 12
+        year -= 1
+    while month > 12:
+        month -= 12
+        year += 1
+    day = min(base_date.day, 28)  # чтобы не ошибиться с "31 февраля"
+    return datetime.date(year, month, day)

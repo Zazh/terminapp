@@ -96,38 +96,43 @@
 
     <!-- 3. Сводка по статьям (категориям) -->
     <h2>Сводка по статьям</h2>
-    {% if category_data %}
-        <table>
-            <thead>
-                <tr>
-                    <th>Статья (Категория)</th>
-                    <th>Доход</th>
-                    <th>Расход</th>
-                    <th>Чистый поток</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for row in category_data.details %}
+{% if monthly_category_data %}
+    <table>
+        <thead>
+            <tr>
+                <th>Месяц</th>
+                <th>Статья (Категория)</th>
+                <th>Чистый поток</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for month_item in monthly_category_data.details %}
+                {% for cat_data in month_item.categories %}
                     <tr>
-                        <td>{{ row.category }}</td>
-                        <td>{{ row.income }}</td>
-                        <td>{{ row.expense }}</td>
-                        <td>{{ row.net_flow }}</td>
+                        <!-- номер месяца -->
+                        <td>{{ month_item.month }}</td>
+                        <!-- название категории -->
+                        <td>{{ cat_data.category }}</td>
+                        <!-- net_flow за этот месяц и категорию -->
+                        <td>{{ cat_data.net_flow }}</td>
                     </tr>
                 {% endfor %}
-                {% if category_data.total %}
-                    <tr class="total-row">
-                        <td>{{ category_data.total.category }}</td>
-                        <td>{{ category_data.total.income }}</td>
-                        <td>{{ category_data.total.expense }}</td>
-                        <td>{{ category_data.total.net_flow }}</td>
-                    </tr>
-                {% endif %}
-            </tbody>
-        </table>
-    {% else %}
-        <p>Нет данных по статьям.</p>
-    {% endif %}
+                <!-- итого по месяцу -->
+                <tr class="month-total">
+                    <td colspan="2">Итого за месяц {{ month_item.month }}</td>
+                    <td>{{ month_item.total_net_flow }}</td>
+                </tr>
+            {% endfor %}
+            <!-- общий итог за весь год -->
+            <tr class="grand-total">
+                <td colspan="2">Итого за все месяцы</td>
+                <td>{{ monthly_category_data.grand_total_net_flow }}</td>
+            </tr>
+        </tbody>
+    </table>
+{% else %}
+    <p>Нет данных.</p>
+{% endif %}
 
  <!-- 4. Все транзакции (операции)
     <h2>Все транзакции</h2>
@@ -172,6 +177,46 @@
         <p>Нет транзакций для отображения.</p>
     {% endif %}
 -->
+
+<h2>Pivot-отчёт за последние 12 месяцев</h2>
+
+<table border="1" cellpadding="5" cellspacing="0">
+    <thead>
+        <tr>
+            <!-- Первая колонка: ActivityType -->
+            <th>ActivityType</th>
+            <!-- Вторая колонка: Category -->
+            <th>Category</th>
+            <!-- Далее столбцы для последних 12 (year, month) -->
+            {% for h in headers %}
+                <th>{{ h }}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+            {% for block in pivot_12_data.data %}
+            {% for cat_item in block.categories %}
+                <tr>
+                    <!-- ActivityType выводим один раз на группу (rowspan) -->
+                    {% if forloop.first %}
+                        <td rowspan="{{ block.categories|length }}">
+                            {{ block.activity_type }}
+                        </td>
+                    {% endif %}
+
+                    <td>{{ cat_item.category }}</td>
+
+                    <!-- Выводим net_flow за каждый из 12 месяцев,
+                         предполагая, что cat_item.year_month_data
+                         строго соответствует порядку pivot_12_data.periods -->
+                    {% for row in cat_item.year_month_data %}
+                        <td>{{ row.net_flow }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        {% endfor %}
+    </tbody>
+</table>
 
 </div>
 </body>

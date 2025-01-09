@@ -1,9 +1,12 @@
 # cashflow/services.py
 
-from django.db.models import Sum, Case, When, F, DecimalField, Value, Q
-from django.db.models.functions import ExtractMonth, Coalesce
+import datetime
+import decimal
+from django.db.models import Sum, Case, When, F, DecimalField, Value
+from django.db.models.functions import ExtractMonth, ExtractYear, Coalesce
+from collections import defaultdict
 from .models import Transaction
-from datetime import date, timedelta, datetime
+from datetime import date, timedelta
 
 def get_filtered_transactions(
     period=None,
@@ -253,37 +256,190 @@ def get_cashflow_summary_by_activity(year: int = None):
     }
 
 
-def get_cashflow_summary_by_category(year: int = None):
+def get_monthly_cashflow_by_category(year: int = None):
     """
-    Возвращает список словарей с суммами доходов/расходов и итоговым потоком
-    (net_flow) в разрезе категорий (Category).
+    Возвращает структуру, где для каждого месяца (1..12) собираются
+    все категории с суммарным net_flow (доходы - расходы).
 
-    Параметр year не обязателен:
+    Пример выходного формата:
+    {
+        "details": [
+            {
+                "month": 1,
+                "categories": [
+                    {"category": "Зарплата", "net_flow": 20000.00},
+                    {"category": "Аренда",   "net_flow": -5000.00},
+                    ...
+                ],
+                "total_net_flow": 15000.00
+            },
+            {
+                "month": 2,
+                "categories": [...],
+                "total_net_flow": ...
+            },
+            ...
+        ],
+        "grand_total_net_flow":  <сумма net_flow за все месяцы>
+    }
+
+    Параметр year (int):
       - Если year != None, фильтруем транзакции по date__year=year
       - Если year=None, берём все транзакции
     """
-    qs = Transaction.objects.all()
 
+    qs = Transaction.objects.all()
     if year:
         qs = qs.filter(date__year=year)
 
+    # Агрегируем по (месяц, категория) и считаем net_flow
     qs_annotated = (
         qs
-        .values(category_name=F('category__name'))  # Группируем по названию категории
+        .annotate(month=ExtractMonth('date'))
+        .values('month', 'category__name')
         .annotate(
-            income=Coalesce(
+            net_flow=Coalesce(
                 Sum(
                     Case(
                         When(category__group__name='Поступление', then=F('amount')),
+                        When(category__group__name='Выбытие', then=-F('amount')),
+                        # Если есть другие группы, добавьте ещё When(...)
+                        default=Value(0),
                         output_field=DecimalField()
                     )
                 ),
                 Value(0, output_field=DecimalField())
-            ),
-            expense=Coalesce(
+            )
+        )
+        .order_by('month', 'category__name')
+    )
+
+    # Собираем данные в структуру: { month: {categories: [...], total_net_flow: x}, ... }
+    summary_by_month = {}
+    grand_total_net_flow = 0
+
+    for row in qs_annotated:
+        month = row['month'] or 0
+        category_name = row['category__name'] or "Без категории"
+        net_flow_val = row['net_flow'] or 0
+
+        # Если месяц ещё не встречался, инициализируем
+        if month not in summary_by_month:
+            summary_by_month[month] = {
+                "month": month,
+                "categories": [],
+                "total_net_flow": 0
+            }
+
+        summary_by_month[month]["categories"].append({
+            "category": category_name,
+            "net_flow": net_flow_val
+        })
+        summary_by_month[month]["total_net_flow"] += net_flow_val
+
+        # Накапливаем общий (за весь год) чистый поток
+        grand_total_net_flow += net_flow_val
+
+    # Превращаем словарь в отсортированный список
+    # (чтобы месяцы шли по возрастанию)
+    details_sorted = sorted(
+        summary_by_month.values(),
+        key=lambda item: item["month"]
+    )
+
+    return {
+        "details": details_sorted,
+        "grand_total_net_flow": grand_total_net_flow
+    }
+
+def _add_months(base_date, months):
+    """
+    Утилита: прибавляет (или вычитает) из base_date заданное число месяцев.
+    """
+    year = base_date.year
+    month = base_date.month + months
+    while month < 1:
+        month += 12
+        year -= 1
+    while month > 12:
+        month -= 12
+        year += 1
+    day = min(base_date.day, 28)  # чтобы не ловить ошибки вида "31 февраля"
+    return datetime.date(year, month, day)
+
+
+def get_last_12_year_months():
+    """
+    Возвращает список (year, month) для последних 12 месяцев,
+    включая текущий месяц (самый свежий) и 11 предыдущих.
+    Выдаётся в порядке «от старого к новому».
+
+    Пример, если сегодня 2025-01-09, вернёт:
+      [(2024, 2), (2024, 3), ..., (2024, 12), (2025, 1)]
+    """
+    today = datetime.date.today()  # <--- берем текущую дату
+    year_months = []
+    # Идём от 11 до 0 (включительно): 12 шагов
+    for i in range(11, -1, -1):
+        past_date = _add_months(today, -i)
+        year_months.append((past_date.year, past_date.month))
+    return year_months
+
+
+def get_activity_category_month_report_12():
+    """
+    Собирает pivot-отчёт за *последние 12 месяцев* (текущий + 11 прошедших).
+    Группировка: (Year, Month) x ActivityType x Category.
+
+    Возвращает структуру:
+    {
+      "data": [
+        {
+          "activity_type": "Операционная",
+          "categories": [
+            {
+              "category": "Зарплата",
+              "year_month_data": [
+                {"year": 2024, "month": 2, "net_flow": 5000},
+                ...
+                {"year": 2025, "month": 1, "net_flow": 20000},
+              ]
+            },
+            ...
+          ]
+        },
+        ...
+      ],
+      "periods": [(2024,2), ..., (2025,1)]
+    }
+    """
+    # 1. Получаем последние 12 (year, month)
+    last_12_list = get_last_12_year_months()  # [(2024, 2), ..., (2025, 1)]
+    allowed_pairs = set(last_12_list)
+
+    # 2. Сужаем выборку транзакций по годам (min_year..max_year)
+    min_year = min(y for (y, m) in last_12_list)
+    max_year = max(y for (y, m) in last_12_list)
+
+    qs = (
+        Transaction.objects
+        .filter(date__year__gte=min_year, date__year__lte=max_year)
+        .annotate(y=ExtractYear('date'), m=ExtractMonth('date'))
+    )
+
+    # 3. Группируем (year, month, activity_type, category) и считаем net_flow
+    qs_annotated = (
+        qs
+        .annotate(year=ExtractYear('date'), month=ExtractMonth('date'))
+        .values('year', 'month', 'category__activity_type__name', 'category__name')
+        .annotate(
+            net_flow=Coalesce(
                 Sum(
                     Case(
-                        When(category__group__name='Выбытие', then=F('amount')),
+                        When(category__group__name='Поступление', then=F('amount')),
+                        When(category__group__name='Выбытие', then=-F('amount')),
+                        # Если есть другие группы (напр. "Перевод"), добавьте ещё When(...)
+                        default=Value(0),
                         output_field=DecimalField()
                     )
                 ),
@@ -292,41 +448,47 @@ def get_cashflow_summary_by_category(year: int = None):
         )
     )
 
-    # Формируем структуру выходных данных
-    results = []
-    total_income = 0
-    total_expense = 0
+    # 4. Складываем в d[activity_type][category][(year, month)] = net_flow
+    d = defaultdict(lambda: defaultdict(lambda: defaultdict(decimal.Decimal)))
+    activity_types_set = set()
 
     for row in qs_annotated:
-        cat_name = row['category_name'] or "Без категории"
-        inc = row['income']
-        exp = row['expense']
-        net_flow = inc - exp
+        row_year = row['year']
+        row_month = row['month']
+        if (row_year, row_month) not in allowed_pairs:
+            # Если не в нашем списке последних 12 (год, месяц), пропускаем
+            continue
 
-        # Накапливаем общие итоги
-        total_income += inc
-        total_expense += exp
+        atype = row['category__activity_type__name'] or "Без вида деятельности"
+        cat = row['category__name'] or "Без категории"
+        val = row['net_flow'] or 0
 
-        results.append({
-            "category": cat_name,
-            "income": inc,
-            "expense": exp,
-            "net_flow": net_flow
+        activity_types_set.add(atype)
+        d[atype][cat][(row_year, row_month)] = val
+
+    # 5. Формируем финальный результат
+    result_data = []
+    for atype in sorted(activity_types_set):
+        categories_list = []
+        for cat_name in sorted(d[atype].keys()):
+            ym_data_list = []
+            # Идём по last_12_list (от старого к новому)
+            for (y, m) in last_12_list:
+                net_flow = d[atype][cat_name].get((y, m), 0)
+                ym_data_list.append({"year": y, "month": m, "net_flow": net_flow})
+            categories_list.append({
+                "category": cat_name,
+                "year_month_data": ym_data_list
+            })
+        result_data.append({
+            "activity_type": atype,
+            "categories": categories_list
         })
 
-    # "Итого" строка по всем категориям
-    total_data = {
-        "category": "Итого по всем статьям",
-        "income": total_income,
-        "expense": total_expense,
-        "net_flow": total_income - total_expense
-    }
-
     return {
-        "details": results,
-        "total": total_data
+        "data": result_data,
+        "periods": last_12_list
     }
-
 
 def get_all_transactions(year: int = None):
     """
