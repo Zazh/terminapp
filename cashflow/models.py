@@ -42,7 +42,7 @@ class Category(models.Model):
         Group,
         on_delete=models.CASCADE,
         related_name="categories",
-        verbose_name="Группа"
+        verbose_name="Группа",
     )
     activity_type = models.ForeignKey(
         ActivityType,

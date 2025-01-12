@@ -23,9 +23,10 @@
             font-weight: bold;
         }
         .container {
-            width: 90%;
-            margin: 0 auto;
+            width: 100%;
+            margin: 1rem auto;
             font-family: sans-serif;
+            font-size: .875rem!important;
         }
         h1, h2 {
             margin-top: 40px;
@@ -33,6 +34,10 @@
     </style>
 </head>
 <body>
+
+{% load cashflow_extras %}
+
+
 <div class="container">
 
     <!-- 1. Сводный отчёт по видам деятельности -->
@@ -109,8 +114,8 @@
             {% for month_item in monthly_category_data.details %}
                 {% for cat_data in month_item.categories %}
                     <tr>
-                        <!-- номер месяца -->
-                        <td>{{ month_item.month }}</td>
+                        <!-- отображаем название месяца вместо цифры -->
+                        <td>{{ month_item.month|month_name }}</td>
                         <!-- название категории -->
                         <td>{{ cat_data.category }}</td>
                         <!-- net_flow за этот месяц и категорию -->
@@ -119,7 +124,7 @@
                 {% endfor %}
                 <!-- итого по месяцу -->
                 <tr class="month-total">
-                    <td colspan="2">Итого за месяц {{ month_item.month }}</td>
+                    <td colspan="2">Итого за месяц {{ month_item.month|month_name }}</td>
                     <td>{{ month_item.total_net_flow }}</td>
                 </tr>
             {% endfor %}
@@ -134,52 +139,8 @@
     <p>Нет данных.</p>
 {% endif %}
 
- <!-- 4. Все транзакции (операции)
-    <h2>Все транзакции</h2>
-    {% if transactions %}
-        <table>
-            <thead>
-                <tr>
-                    <th>Дата</th>
-                    <th>Тип</th>
-                    <th>Категория</th>
-                    <th>Кошелёк</th>
-                    <th>Сумма</th>
-                    <th>Описание</th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for t in transactions %}
-                <tr>
-                    <td>{{ t.date }}</td>
-                    <td>{{ t.get_transaction_type_display }}</td>
-                    <td>
-                        {% if t.category %}
-                            {{ t.category.name }}
-                        {% else %}
-                            Без категории
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if t.wallet %}
-                            {{ t.wallet.name }}
-                        {% else %}
-                            Нет кошелька
-                        {% endif %}
-                    </td>
-                    <td>{{ t.amount }}</td>
-                    <td>{{ t.description|default_if_none:"—" }}</td>
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <p>Нет транзакций для отображения.</p>
-    {% endif %}
--->
-
+    
 <h2>Pivot-отчёт за последние 12 месяцев</h2>
-
 <table border="1" cellpadding="5" cellspacing="0">
     <thead>
         <tr>
@@ -187,14 +148,16 @@
             <th>ActivityType</th>
             <!-- Вторая колонка: Category -->
             <th>Category</th>
-            <!-- Далее столбцы для последних 12 (year, month) -->
-            {% for h in headers %}
-                <th>{{ h }}</th>
+            <!-- Далее столбцы для последних 12 месяцев -->
+            {% for ym in pivot_12_data.periods %}
+                {% with y=ym.0 m=ym.1 %}
+                    <th>{{ m|month_name }} {{ y }}</th>
+                {% endwith %}
             {% endfor %}
         </tr>
     </thead>
     <tbody>
-            {% for block in pivot_12_data.data %}
+        {% for block in pivot_12_data.data %}
             {% for cat_item in block.categories %}
                 <tr>
                     <!-- ActivityType выводим один раз на группу (rowspan) -->
@@ -206,9 +169,7 @@
 
                     <td>{{ cat_item.category }}</td>
 
-                    <!-- Выводим net_flow за каждый из 12 месяцев,
-                         предполагая, что cat_item.year_month_data
-                         строго соответствует порядку pivot_12_data.periods -->
+                    <!-- Выводим net_flow за каждый из 12 месяцев -->
                     {% for row in cat_item.year_month_data %}
                         <td>{{ row.net_flow }}</td>
                     {% endfor %}

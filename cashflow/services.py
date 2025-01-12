@@ -14,7 +14,7 @@ def get_filtered_transactions(
     end_date=None,
     exact_date=None,
     transaction_type=None,
-    wallet_id=None,  # <-- ОБЯЗАТЕЛЬНО ДОЛЖНО БЫТЬ
+    wallet_id=None,
     category_id=None,
     amount_min=None,
     amount_max=None,
@@ -42,7 +42,6 @@ def get_filtered_transactions(
     else:
         # 2. Если exact_date не задан, проверяем period
         if period:
-            from .services import get_date_range_for_period
             d_start, d_end = get_date_range_for_period(period, start_date, end_date)
             if d_start and d_end:
                 qs = qs.filter(date__range=[d_start, d_end])

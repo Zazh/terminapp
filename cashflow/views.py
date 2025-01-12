@@ -3,7 +3,12 @@
 from datetime import datetime
 from django.shortcuts import render
 from .models import Wallet, Category
-from .services import get_wallet_balances, get_monthly_in_out, get_cashflow_summary_by_activity, get_monthly_cashflow_by_category, get_filtered_transactions, get_activity_category_month_report_12
+from .services import (get_wallet_balances,
+                       get_monthly_in_out,
+                       get_cashflow_summary_by_activity,
+                       get_monthly_cashflow_by_category,
+                       get_filtered_transactions,
+                       get_activity_category_month_report_12)
 
 def transactions_list_view(request):
     """
@@ -123,12 +128,6 @@ def monthly_report_view(request):
     }
     return render(request, 'cashflow/monthly_report.html', context)
 
-MONTH_NAMES = {
-    1: "Январь", 2: "Февраль", 3: "Март",
-    4: "Апрель", 5: "Май", 6: "Июнь",
-    7: "Июль", 8: "Август", 9: "Сентябрь",
-    10: "Октябрь", 11: "Ноябрь", 12: "Декабрь",
-}
 
 def dashboard_view(request):
     """
@@ -163,17 +162,6 @@ def dashboard_view(request):
     #       "periods": [(2024,2), (2024,3), ..., (2025,1)]
     #    }
 
-    # 5. Сформируем «headers» для шапки таблицы (например, "Февраль 2024")
-    #    Берём список (year, month) из pivot_12_data["periods"]
-    headers = []
-    if "periods" in pivot_12_data:
-        for (y, m) in pivot_12_data["periods"]:
-            month_name = MONTH_NAMES.get(m, f"Месяц {m}")
-            headers.append(f"{month_name} {y}")
-    else:
-        # На случай если periods пуст, чтобы не упасть с ошибкой
-        headers = []
-
     # Итоговый контекст
     context = {
         'cashflow_data': cashflow_data,
@@ -181,27 +169,10 @@ def dashboard_view(request):
         'monthly_category_data': monthly_category_data,
         # 'months_list': months_list,  # <- если не используете, можно убрать
         'pivot_12_data': pivot_12_data,
-        'headers': headers,  # <-- передаём заголовки для таблицы
+        # 'headers': headers,  # <-- передаём заголовки для таблицы
     }
     return render(request, 'cashflow/dashboard.html', context)
 
-def get_last_12_year_months():
-    """
-    Возвращает список (year, month) для последних 12 месяцев,
-    включая текущий месяц (сначала самый старый).
-    Пример: если сейчас январь 2025, вернёт:
-      [
-        (2024, 2), (2024, 3), ..., (2025, 1)
-      ]
-    """
-    today = datetime.date.today()
-    year_months = []
-    # Начинаем с 11 месяцев назад до 0 месяцев (текущий)
-    for i in range(11, -1, -1):
-        # вычисляем нужный год и месяц
-        past_date = _add_months(today, -i)
-        year_months.append((past_date.year, past_date.month))
-    return year_months
 
 def _add_months(base_date, months):
     """
