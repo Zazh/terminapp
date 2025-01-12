@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<body>
+
+{% block content %}
+<h1>Specifications</h1>
+
+<a href="{% url 'products:specification_create' %}">Add Specification</a>
+
+{% if specifications %}
+    <ul>
+        {% for specification in specifications %}
+            <li>
+                <strong>{{ specification.name }}</strong>
+                {% if specification.description %}
+                    - {{ specification.description }}
+                {% endif %}
+                <a href="{% url 'products:specification_update' specification.id %}">Edit</a>
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>No specifications available.</p>
+{% endif %}
+{% endblock %}
+
+</body>
+</html>

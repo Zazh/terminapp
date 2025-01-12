@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Categories</title>
+</head>
+<body>
+{% block content %}
+<h1>Categories</h1>
+
+<a href="{% url 'products:category_create' %}">Add Category</a>
+
+{% if categories %}
+    <ul>
+        {% for category in categories %}
+            <li>
+                <strong>{{ category.name }}</strong>
+                {% if category.description %}
+                    - {{ category.description }}
+                {% endif %}
+                <a href="{% url 'products:category_update' category.id %}">Edit</a>
+            </li>
+        {% endfor %}
+    </ul>
+
+    <!-- Пагинация -->
+    <div>
+        <span>
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+        </span>
+        {% if page_obj.has_previous %}
+            <a href="?page=1">First</a>
+            <a href="?page={{ page_obj.previous_page_number }}">Previous</a>
+        {% endif %}
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}">Next</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}">Last</a>
+        {% endif %}
+    </div>
+{% else %}
+    <p>No categories available.</p>
+{% endif %}
+{% endblock %}
+
+</body>
+</html>

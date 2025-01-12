@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<body>
+{% block content %}
+<h1>{{ product.name }}</h1>
+<p>{{ product.description }}</p>
+<p>Type: {{ product.get_product_type_display }}</p>
+<p>Category: {{ product.category.name }}</p>
+<p>Price: ${{ product.price }}</p>
+
+<h2>Specifications:</h2>
+<ul>
+    {% for spec in product.product_specifications.all %}
+        <li>{{ spec.specification.name }}: {{ spec.value }}</li>
+    {% endfor %}
+</ul>
+
+<a href="{% url 'products:product_update' product.id %}">Edit Product</a>
+<a href="{% url 'products:product_specification_create' product.id %}">Add Specification</a>
+{% endblock %}
+
+</body>
+</html>
