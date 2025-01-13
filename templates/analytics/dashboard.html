@@ -1,4 +1,3 @@
-<!-- cashflow/templates/cashflow/dashboard.html -->
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -76,10 +75,6 @@
     <p>Нет данных для отображения по видам деятельности.</p>
 {% endif %}
 
-
-
-
-
     <!-- 2. Сводный отчёт по кошелькам -->
     <h2>Сводный отчёт по кошелькам</h2>
     {% if wallet_data %}
@@ -105,8 +100,8 @@
 
 
     <!-- 3. Сводка по статьям (категориям) -->
-    <h2>Сводка по статьям</h2>
-{% if monthly_category_data %}
+<h2>Сводка по статьям</h2>
+{% if monthly_category_data.details %}
     <table>
         <thead>
             <tr>
@@ -116,11 +111,11 @@
             </tr>
         </thead>
         <tbody>
-            {% for month_item in monthly_category_data.details %}
+            {% for month, month_item in monthly_category_data.details.items %}
                 {% for cat_data in month_item.categories %}
                     <tr>
                         <!-- отображаем название месяца вместо цифры -->
-                        <td>{{ month_item.month|month_name }}</td>
+                        <td>{{ month|month_name }}</td>
                         <!-- название категории -->
                         <td>{{ cat_data.category }}</td>
                         <!-- net_flow за этот месяц и категорию -->
@@ -129,7 +124,7 @@
                 {% endfor %}
                 <!-- итого по месяцу -->
                 <tr class="month-total">
-                    <td colspan="2">Итого за месяц {{ month_item.month|month_name }}</td>
+                    <td colspan="2">Итого за месяц {{ month|month_name }}</td>
                     <td>{{ month_item.total_net_flow }}</td>
                 </tr>
             {% endfor %}
@@ -143,6 +138,7 @@
 {% else %}
     <p>Нет данных.</p>
 {% endif %}
+
 
     
 <h2>Pivot-отчёт за последние 12 месяцев</h2>
@@ -161,7 +157,7 @@
             {% endfor %}
         </tr>
     </thead>
-    <tbody>
+ <tbody>
         {% for block in pivot_12_data.data %}
             {% for cat_item in block.categories %}
                 <tr>
@@ -182,6 +178,7 @@
             {% endfor %}
         {% endfor %}
     </tbody>
+
 </table>
 
 </div>

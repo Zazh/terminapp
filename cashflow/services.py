@@ -87,16 +87,8 @@ def get_filtered_transactions(
         elif d_end:
             qs = qs.filter(date__lte=d_end)
 
-    # Вычисление общей суммы с учетом типа транзакции
-    total_sum = qs.aggregate(
-        total=Sum(
-            Case(
-                When(transaction_type='income', then=F('amount')),
-                When(transaction_type='expense', then=-F('amount')),
-                output_field=DecimalField(),
-            )
-        )
-    )['total'] or 0
+    # Вычисление общей суммы
+    total_sum = qs.aggregate(total=Sum('amount'))['total'] or 0
 
     # Сортировка по убыванию даты
     return qs.order_by('-date', '-id'), total_sum
