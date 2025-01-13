@@ -14,6 +14,6 @@ def month_name(month_number):
     """Преобразует числовой месяц в его название."""
     try:
         month_int = int(month_number)
-        return MONTH_NAMES.get(month_int, month_number)
+        return MONTH_NAMES.get(month_int, str(month_number))
     except (ValueError, TypeError):
-        return month_number
+        return str(month_number)

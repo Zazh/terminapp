@@ -1,7 +1,7 @@
 # finance/admin.py
 
 from django.contrib import admin
-from .models import Category, Group, Transaction, BusinessDirection, ActivityType, Wallet
+from .models import Category, Transaction, BusinessDirection, ActivityType, Wallet
 
 @admin.register(BusinessDirection)
 class BusinessDirectionAdmin(admin.ModelAdmin):
@@ -13,20 +13,17 @@ class ActivityTypeAdmin(admin.ModelAdmin):
     list_display = ('id', 'name')
     search_fields = ('name',)
 
-@admin.register(Group)
-class GroupAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name')
-    search_fields = ('name',)
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'group', 'activity_type')
-    list_filter = ('group', 'activity_type')
-    search_fields = ('name', 'description')
+    list_display = ('id', 'name', 'operation_type', 'activity_type')  # Добавлено 'activity_type'
+    list_filter = ('operation_type', 'activity_type')  # Добавлено 'activity_type' в фильтры
+    search_fields = ('name', 'description')  # Поиск по названию и описанию
+
 
 @admin.register(Wallet)
 class WalletAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name')
+    list_display = ('id', 'name', 'created_at', 'updated_at')
     search_fields = ('name', )
 
 @admin.register(Transaction)

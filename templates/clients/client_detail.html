@@ -1,10 +1,20 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Детали клиента</title>
 </head>
 <body>
-
+    <h1>{{ client.first_name }}</h1>
+    <p>Основной телефон: {{ client.primary_phone }}</p>
+    <p>Резервный телефон: {{ client.backup_phone }}</p>
+    <p>Компания: {{ client.company }}</p>
+    <p>Email: {{ client.email }}</p>
+    <a href="/clients/{{ client.id }}/update/">Редактировать</a>
+    <form action="/clients/{{ client.id }}/delete/" method="post" style="display:inline;">
+        {% csrf_token %}
+        <button type="submit">Удалить</button>
+    </form>
+    <br>
+    <a href="/clients/">Вернуться к списку</a>
 </body>
 </html>

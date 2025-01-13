@@ -133,44 +133,37 @@
 </form>
 
 <!-- Таблица результатов -->
+<p><strong>Общая сумма:</strong> {{ total_sum }} </p>
+
 <table>
     <thead>
         <tr>
-            <th>ID</th>
             <th>Дата</th>
-            <th>Тип</th>
             <th>Кошелёк</th>
             <th>Категория</th>
+            <th>Тип транзакции</th>
             <th>Сумма</th>
             <th>Описание</th>
         </tr>
     </thead>
     <tbody>
-    {% for tx in transactions %}
+        {% for transaction in transactions %}
+            <tr>
+                <td>{{ transaction.date }}</td>
+                <td>{{ transaction.wallet.name }}</td>
+                <td>{{ transaction.category.name }}</td>
+                <td>{{ transaction.get_transaction_type_display }}</td>
+                <td>{{ transaction.signed_amount }}</td>
+                <td>{{ transaction.description }}</td>
+            </tr>
+        {% empty %}
         <tr>
-            <td>{{ tx.id }}</td>
-            <td>{{ tx.date }}</td>
-            <td>{{ tx.get_transaction_type_display }}</td>
-            <td>
-                {% if tx.wallet %}
-                    {{ tx.wallet.name }}
-                {% else %}
-                    -
-                {% endif %}
-            </td>
-            <td>
-              {% if tx.category %}
-                {{ tx.category.name }}
-              {% else %}
-                -
-              {% endif %}
-            </td>
-            <td>{{ tx.amount }}</td>
-            <td>{{ tx.description|default_if_none:"—" }}</td>
+            <td colspan="6">Нет транзакций</td>
         </tr>
-    {% endfor %}
+        {% endfor %}
     </tbody>
 </table>
+
 
 
 </div>

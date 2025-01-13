@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Список клиентов</title>
+</head>
+<body>
+    <h1>Список клиентов</h1>
+    <a href="/clients/create/">Добавить клиента</a>
+    <ul>
+        {% for client in clients %}
+        <li>
+            <a href="/clients/{{ client.id }}/">{{ client.first_name }} ({{ client.primary_phone }})</a>
+        </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

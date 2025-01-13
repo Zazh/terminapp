@@ -1,10 +1,29 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
+    <title>Форма клиента</title>
 </head>
 <body>
-$END$
+    <h1>{% if client %}Редактировать клиента{% else %}Добавить клиента{% endif %}</h1>
+    <form method="post">
+        {% csrf_token %}
+        <p>
+            Имя: <input type="text" name="first_name" value="{{ client.first_name|default:"" }}">
+        </p>
+        <p>
+            Основной телефон: <input type="text" name="primary_phone" value="{{ client.primary_phone|default:"" }}">
+        </p>
+        <p>
+            Резервный телефон: <input type="text" name="backup_phone" value="{{ client.backup_phone|default:"" }}">
+        </p>
+        <p>
+            Компания: <input type="text" name="company" value="{{ client.company|default:"" }}">
+        </p>
+        <p>
+            Email: <input type="email" name="email" value="{{ client.email|default:"" }}">
+        </p>
+        <button type="submit">Сохранить</button>
+    </form>
+    <a href="/clients/">Отмена</a>
 </body>
 </html>

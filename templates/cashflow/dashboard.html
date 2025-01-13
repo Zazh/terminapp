@@ -37,43 +37,48 @@
 
 {% load cashflow_extras %}
 
+<pre>{{ cashflow_data|safe }}</pre>
+<pre>{{ monthly_category_data|safe }}</pre>
+<pre>{{ pivot_12_data|safe }}</pre>
 
 <div class="container">
 
     <!-- 1. Сводный отчёт по видам деятельности -->
-    <h1>Сводный отчёт по движениям денежных средств (Cash Flow) [Виды деятельности]</h1>
-    {% if cashflow_data %}
-        <table>
-            <thead>
+<h1>Сводный отчёт по движениям денежных средств (Cash Flow) [Виды деятельности]</h1>
+{% if cashflow_data.details %}
+    <table>
+        <thead>
+            <tr>
+                <th>Вид деятельности</th>
+                <th>Доход</th>
+                <th>Расход</th>
+                <th>Чистый поток</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in cashflow_data.details %}
                 <tr>
-                    <th>Вид деятельности</th>
-                    <th>Доход</th>
-                    <th>Расход</th>
-                    <th>Чистый поток</th>
+                    <td>{{ row.activity_type }}</td>
+                    <td>{{ row.income }}</td>
+                    <td>{{ row.expense }}</td>
+                    <td>{{ row.net_flow }}</td>
                 </tr>
-            </thead>
-            <tbody>
-                {% for row in cashflow_data.details %}
-                    <tr>
-                        <td>{{ row.activity_type }}</td>
-                        <td>{{ row.income }}</td>
-                        <td>{{ row.expense }}</td>
-                        <td>{{ row.net_flow }}</td>
-                    </tr>
-                {% endfor %}
-                {% if cashflow_data.total %}
-                    <tr class="total-row">
-                        <td>{{ cashflow_data.total.activity_type }}</td>
-                        <td>{{ cashflow_data.total.income }}</td>
-                        <td>{{ cashflow_data.total.expense }}</td>
-                        <td>{{ cashflow_data.total.net_flow }}</td>
-                    </tr>
-                {% endif %}
-            </tbody>
-        </table>
-    {% else %}
-        <p>Нет данных для отображения по видам деятельности.</p>
-    {% endif %}
+            {% endfor %}
+            <tr class="total-row">
+                <td>Итого</td>
+                <td>{{ cashflow_data.total.income }}</td>
+                <td>{{ cashflow_data.total.expense }}</td>
+                <td>{{ cashflow_data.total.net_flow }}</td>
+            </tr>
+        </tbody>
+    </table>
+{% else %}
+    <p>Нет данных для отображения по видам деятельности.</p>
+{% endif %}
+
+
+
+
 
     <!-- 2. Сводный отчёт по кошелькам -->
     <h2>Сводный отчёт по кошелькам</h2>
