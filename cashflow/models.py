@@ -65,7 +65,7 @@ class Transaction(models.Model):
         verbose_name="Категория"
     )
     amount = models.DecimalField(max_digits=10, decimal_places=2)
-    date = models.DateField()
+    date = models.DateField(auto_now_add=True)
     description = models.TextField(blank=True, null=True)
     wallet = models.ForeignKey(
         Wallet,
@@ -73,6 +73,14 @@ class Transaction(models.Model):
         related_name="transactions",
         verbose_name="Кошелёк",
         default=1,  # Укажите ID кошелька по умолчанию
+    )
+    order_item = models.OneToOneField(
+        'orders.OrderItem',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="transaction",
+        verbose_name="Элемент заказа"
     )
 
     def save(self, *args, **kwargs):
