@@ -74,7 +74,7 @@ class Transaction(models.Model):
         verbose_name="Кошелёк",
         default=1,  # Укажите ID кошелька по умолчанию
     )
-    order_item = models.OneToOneField(
+    reason_transaction = models.OneToOneField(
         'orders.OrderItem',
         on_delete=models.CASCADE,
         null=True,

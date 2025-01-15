@@ -5,10 +5,10 @@ from products.models import Product
 
 class OrderItem(models.Model):
     STATUS_CHOICES = [
-        ('pending', 'В ожидании'),
-        ('completed', 'Завершен'),
-        ('refunded', 'Возврат средств'),
+        ('pending', 'В процессе'),
+        ('paid', 'Оплачен'),
         ('cancelled', 'Отменен'),
+        ('deleted', 'Удален'),
     ]
 
     product = models.ForeignKey(
@@ -50,18 +50,18 @@ class OrderItem(models.Model):
         super().save(*args, **kwargs)
 
         # Логика создания или удаления транзакции
-        if self.status == 'completed':
+        if self.status == 'paid':
             self.create_transaction()
-        elif self.status in ['pending', 'cancelled', 'refunded']:
+        elif self.status in ['deleted']:
             self.delete_transaction()
 
     def create_transaction(self):
         """
         Создаёт или обновляет транзакцию для завершённого элемента заказа.
         """
-        sales_category = Category.objects.get(id=3)  # Получите категорию "Продажи"
+        sales_category = Category.objects.get(id=3)  # Получите категорию "Продажи" !!! TO-DO
         Transaction.objects.update_or_create(
-            order_item=self,
+            reason_transaction=self,
             defaults={
                 'category': sales_category,
                 'wallet': self.wallet,
