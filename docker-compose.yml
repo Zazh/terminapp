@@ -11,7 +11,8 @@ services:
       - PYTHONUNBUFFERED=1
     depends_on:
       - db
-
+    command: python manage.py runserver 0.0.0.0:8001
+    
   db:
     image: postgres:15
     environment:
@@ -19,7 +20,7 @@ services:
       POSTGRES_USER: terminaluser
       POSTGRES_PASSWORD: kb971033
     ports:
-      - "5433:5433"
+      - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
 

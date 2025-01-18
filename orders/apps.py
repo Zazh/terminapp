@@ -7,4 +7,3 @@ class OrdersConfig(AppConfig):
 
     def ready(self):
         import orders.signals  # Здесь подключаем файл с сигналами
-

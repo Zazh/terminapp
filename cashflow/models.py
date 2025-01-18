@@ -1,6 +1,8 @@
 # cashflow/models.py
 from django.db import models
 from django.db.models import Sum, Case, When, F, DecimalField
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 
 class Wallet(models.Model):
     """
@@ -59,7 +61,7 @@ class Transaction(models.Model):
     Финансовая транзакция (доход/расход).
     """
     category = models.ForeignKey(
-        Category,
+        'cashflow.Category',
         on_delete=models.CASCADE,
         related_name="transactions",
         verbose_name="Категория"
@@ -68,20 +70,23 @@ class Transaction(models.Model):
     date = models.DateField(auto_now_add=True)
     description = models.TextField(blank=True, null=True)
     wallet = models.ForeignKey(
-        Wallet,
+        'cashflow.Wallet',
         on_delete=models.CASCADE,
         related_name="transactions",
         verbose_name="Кошелёк",
-        default=1,  # Укажите ID кошелька по умолчанию
+        default=1,  # Укажите ID кошелька по умолчанию (или удалите, если не нужно)
     )
-    reason_transaction = models.OneToOneField(
-        'orders.OrderItem',
+
+    # ----------- Начало полей GenericForeignKey -----------
+    content_type = models.ForeignKey(
+        ContentType,
         on_delete=models.CASCADE,
         null=True,
-        blank=True,
-        related_name="transaction",
-        verbose_name="Элемент заказа"
+        blank=True
     )
+    object_id = models.PositiveIntegerField(null=True, blank=True)
+    reason_transaction = GenericForeignKey('content_type', 'object_id')
+    # ----------- Конец полей GenericForeignKey -----------
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
@@ -91,7 +96,7 @@ class Transaction(models.Model):
         """
         Определяет тип транзакции (income/expense) на основе категории.
         """
-        operation_type = self.category.operation_type
+        operation_type = self.category.operation_type  # Предполагается, что у Category есть поле operation_type
         if operation_type in ['income', 'technical_income']:
             return 'Доход'
         elif operation_type in ['expense', 'technical_expense']:
@@ -104,7 +109,8 @@ class Transaction(models.Model):
         Возвращает балансы по каждому кошельку.
         """
         return (
-            cls.objects.values('wallet__name')
+            cls.objects
+            .values('wallet__name')
             .annotate(
                 balance=Sum(
                     Case(
@@ -127,7 +133,4 @@ class Transaction(models.Model):
         return self.amount
 
     def __str__(self):
-        """
-        Представление объекта в виде строки.
-        """
         return f"{self.transaction_type}: {self.amount} {self.category} ({self.wallet})"
