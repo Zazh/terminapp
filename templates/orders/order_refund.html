@@ -1,0 +1,22 @@
+<!-- templates/orders/order_refund.html -->
+{% load static %}
+
+{% block content %}
+<h1>Возврат позиции</h1>
+
+<p>Продукт: {{ order_item.product.name }}</p>
+<p>Количество в заказе: {{ order_item.quantity }}</p>
+<p>Сумма: {{ order_item.calculate_amount }}</p>
+
+<hr/>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Оформить возврат</button>
+</form>
+
+<p>
+  <a href="{% url 'orders:order_detail' order_item.order.id %}">Вернуться к заказу</a>
+</p>
+{% endblock content %}

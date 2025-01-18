@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<body>
+
+<!-- templates/orders/refund_order_items.html -->
+{% load static %}
+
+{% block content %}
+<h1>Позиции заказа №{{ order.id }} для возврата</h1>
+
+<table>
+    <thead>
+        <tr>
+            <th>Продукт</th>
+            <th>Количество</th>
+            <th>Цена</th>
+            <th>Скидка</th>
+            <th>Сумма</th>
+            <th>Статус</th>
+            <th>Возврат</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in order_items %}
+        <tr>
+            <td>{{ item.product.name }}</td>
+            <td>{{ item.quantity }}</td>
+            <td>{{ item.price }}</td>
+            <td>{{ item.discount }}</td>
+            <td>{{ item.calculate_amount }}</td>
+            <td>{{ item.status }}</td>
+            <td>
+                {% if item.status == 'paid' %}
+                  <!-- Ссылка на существующий функционал возврата -->
+                  <a href="{% url 'orders:order_refund' item.id %}">
+                    Оформить возврат
+                  </a>
+                {% else %}
+                  Нельзя вернуть (не оплачен)
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<p>
+  <a href="{% url 'orders:refund_orders_list' %}?client_id={{ order.client.id }}">Вернуться к заказам клиента</a>
+</p>
+{% endblock content %}
+
+</body>
+</html>

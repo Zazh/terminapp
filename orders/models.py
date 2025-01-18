@@ -1,11 +1,9 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 from decimal import Decimal
-
 from cashflow.models import Wallet, Transaction, Category
 from products.models import Product
-from clients.models import Client  # импорт вашей модели клиента
-
+from clients.models import Client
 from django.contrib.contenttypes.models import ContentType
 
 class Order(models.Model):

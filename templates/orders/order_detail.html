@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<body>
+<!-- templates/orders/order_detail.html -->
+{% load static %}
+
+{% block content %}
+<h1>Заказ №{{ object.id }}</h1>
+<p>Клиент: {{ object.client }}</p>
+<p>Статус: {{ object.status }}</p>
+<p>Сумма: {{ object.total_amount }}</p>
+
+<hr/>
+
+<h2>Позиции заказа</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Продукт</th>
+      <th>Количество</th>
+      <th>Цена</th>
+      <th>Скидка</th>
+      <th>Сумма</th>
+      <th>Статус</th>
+      <th>Действия</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in object.order_items.all %}
+      <tr>
+        <td>{{ item.product.name }}</td>
+        <td>{{ item.quantity }}</td>
+        <td>{{ item.price }}</td>
+        <td>{{ item.discount }}</td>
+        <td>{{ item.calculate_amount }}</td>
+        <td>{{ item.status }}</td>
+        <td>
+          {% if item.status != 'cancelled' and item.status != 'deleted' %}
+            <a href="{% url 'orders:order_item_cancel' item.id %}">Отменить</a>
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<!-- Ссылка на добавление позиции в заказ -->
+<p>
+  <a href="{% url 'orders:order_item_add' object.id %}">Добавить позицию</a>
+</p>
+
+{% endblock content %}
+</body>
+</html>

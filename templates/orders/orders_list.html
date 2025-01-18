@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<body>
+<!-- templates/orders/orders_list.html -->
+{% load static %}
+
+{% block content %}
+<h1>Список заказов</h1>
+
+<!-- Ссылка на создание заказа -->
+<p>
+  <a href="{% url 'orders:order_create' %}">Создать новый заказ</a>
+</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Клиент</th>
+            <th>Статус</th>
+            <th>Сумма</th>
+            <th>Действия</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for order in object_list %}
+        <tr>
+            <td>{{ order.id }}</td>
+            <td>{{ order.client }}</td>
+            <td>{{ order.status }}</td>
+            <td>{{ order.total_amount }}</td>
+            <td>
+                <a href="{% url 'orders:order_detail' order.id %}">Просмотр</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock content %}
+</body>
+</html>

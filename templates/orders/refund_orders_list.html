@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<body>
+<!-- templates/orders/refund_orders_list.html -->
+{% load static %}
+
+{% block content %}
+<h1>Список заказов клиента {{ client }}</h1>
+
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Статус</th>
+            <th>Сумма</th>
+            <th>Дата создания</th>
+            <th>Действие</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for order in orders %}
+        <tr>
+            <td>{{ order.id }}</td>
+            <td>{{ order.status }}</td>
+            <td>{{ order.total_amount }}</td>
+            <td>{{ order.created_at|date:"d.m.Y H:i" }}</td>
+            <td>
+                <a href="{% url 'orders:refund_order_items' order.id %}">Перейти к возврату</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<p>
+  <a href="{% url 'orders:refund_search' %}">Вернуться к поиску клиента</a>
+</p>
+{% endblock content %}
+</body>
+</html>
