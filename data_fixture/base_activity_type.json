@@ -1,0 +1,30 @@
+[
+{
+    "model": "cashflow.activitytype",
+    "pk": 1,
+    "fields": {
+        "name": "Операционная"
+    }
+},
+{
+    "model": "cashflow.activitytype",
+    "pk": 2,
+    "fields": {
+        "name": "Инвестиционная"
+    }
+},
+{
+    "model": "cashflow.activitytype",
+    "pk": 3,
+    "fields": {
+        "name": "Финансовая"
+    }
+},
+{
+    "model": "cashflow.activitytype",
+    "pk": 4,
+    "fields": {
+        "name": "Техническая операция"
+    }
+}
+]

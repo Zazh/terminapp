@@ -1,0 +1,392 @@
+[
+{
+    "model": "cashflow.category",
+    "pk": 1,
+    "fields": {
+        "name": "Поступление — Перевод между счетами",
+        "description": "Поступление денег с нашего счета или другого кошелька",
+        "operation_type": "income",
+        "activity_type": 4
+    }
+},
+{
+    "model": "cashflow.category",
+    "pk": 2,
+    "fields": {
+        "name": "Выбытие — Перевод между счетами",
+        "description": "Перевод денег на другой наш счет или кошелёк",
+        "operation_type": "expense",
+        "activity_type": 4
+    }
+},
+{
+    "model": "cashflow.category",
+    "pk": 3,
+    "fields": {
+        "name": "Продажи на торг. точках",
+        "description": "Поступления от продаж, на торговых точках, по кассе и безналу",
+        "operation_type": "income",
+        "activity_type": 1
+    }
+},
+{
+    "model": "cashflow.category",
+    "pk": 4,
+    "fields": {
+        "name": "Возвраты клиентам",
+        "description": "Мы вернули деньги клиенут, за ранее купленный товар",
+        "operation_type": "expense",
+        "activity_type": 1
+    }
+},
+{
+    "model": "cashflow.category",
+    "pk": 5,
+    "fields": {
+        "name": "Продажи вендинговые автоматы",
+        "description": "Поступления от продаж, в вендинговых автоматах",
+        "operation_type": "income",
+        "activity_type": 1
+    }
+},
+{
+    "model": "cashflow.category",
+    "pk": 6,
+    "fields": {
+        "name": "Возвраты от поставщиков",
+        "description": "Поставщики вернули нам деньги, по ранее проведённым оплатам",
+        "operation_type": "expense",
+        "activity_type": 1
+    }
+},
+{
+    "model": "cashflow.category",
+    "pk": 7,
+    "fields": {
+        "name": "Закупка товара",
+        "description": "Закупка товара для последующей перепродажи на торговых точках",
+        "operation_type": "expense",
+        "activity_type": 1
+    }
+},
+{
+    "model": "cashflow.category",
+    "pk": 8,
+    "fields": {
+        "name": "Транспортные услуги",
+        "description": "Оплаты транспортным компаниям и курьерским службам, за перевозку товаров до точек, и документов поставщикам",
+        "operation_type": "expense",
+        "activity_type": 1
+    }
+},
+{
+    "model": "cashflow.category",
+    "pk": 9,
+    "fields": {
+        "name": "Экварийнг",
+        "description": "Комиссии за эквайринг взымаемые, при оплате по безналу",
+        "operation_type": "expense",
+        "activity_type": 1
+    }
+},
+{
+    "model": "cashflow.category",
+    "pk": 10,
+    "fields": {
+        "name": "РКО",
+        "description": "Абонентская плата за обслуживание РС, и комисии за платёжные поручения",
+        "operation_type": "expense",
+        "activity_type": 1
+    }
+},
+{
+    "model": "cashflow.category",
+    "pk": 11,
+    "fields": {
+        "name": "ИПН 3%",
+        "description": "Оплата налога ИПН 3%",
+        "operation_type": "expense",
+        "activity_type": 1
+    }
+},
+{
+    "model": "cashflow.category",
+    "pk": 12,
+    "fields": {
+        "name": "Зарплата производственного персонала",
+        "description": "Оплата, зарплаты кассиров на торговых точках,  в том числе бонусы и премии",
+        "operation_type": "expense",
+        "activity_type": 1
+    }
+},
+{
+    "model": "cashflow.category",
+    "pk": 13,
+    "fields": {
+        "name": "Зарплата административного персонала",
+        "description": "Зарплата бухгалтера, директора, управляющих точками, товароведов, финансового консультаната, юриста  в том числе бонусы и премии",
+        "operation_type": "expense",
+        "activity_type": 1
+    }
+},
+{
+    "model": "cashflow.category",
+    "pk": 14,
+    "fields": {
+        "name": "Зарплата коммерческого персонала",
+        "description": "Зарплата продавцов на торговых точках, маркетолога, SMM-менеджера, директолога в том числе бонусы и премии",
+        "operation_type": "expense",
+        "activity_type": 1
+    }
+},
+{
+    "model": "cashflow.category",
+    "pk": 15,
+    "fields": {
+        "name": "Налоги на ФОТ",
+        "description": "ОПВ, ОПВР, СО, ВОСМС",
+        "operation_type": "expense",
+        "activity_type": 1
+    }
+},
+{
+    "model": "cashflow.category",
+    "pk": 16,
+    "fields": {
+        "name": "Обучение персонала",
+        "description": "Компенсация курсов, для сотрудников офиса, обучение бариста для работы на точках",
+        "operation_type": "expense",
+        "activity_type": 1
+    }
+},
+{
+    "model": "cashflow.category",
+    "pk": 17,
+    "fields": {
+        "name": "Расходы на персонал",
+        "description": "Расходы на организацию корпоративов, подарки сотрудникам и т.д.",
+        "operation_type": "expense",
+        "activity_type": 1
+    }
+},
+{
+    "model": "cashflow.category",
+    "pk": 18,
+    "fields": {
+        "name": "Командировачные расходы",
+        "description": "Покупка виабилетов и оплата проживания сотрудников, компенсация суточных расходов",
+        "operation_type": "expense",
+        "activity_type": 1
+    }
+},
+{
+    "model": "cashflow.category",
+    "pk": 19,
+    "fields": {
+        "name": "Представительские расходы",
+        "description": "Оплата обедов с клиентами, подарки клиентам",
+        "operation_type": "expense",
+        "activity_type": 1
+    }
+},
+{
+    "model": "cashflow.category",
+    "pk": 20,
+    "fields": {
+        "name": "Поиск и найм персонала",
+        "description": "Оплата работы стороннего HR, рекрутера, оплата площадок hh.kz",
+        "operation_type": "expense",
+        "activity_type": 1
+    }
+},
+{
+    "model": "cashflow.category",
+    "pk": 21,
+    "fields": {
+        "name": "Оплата рекламных систем",
+        "description": "Оплата за покупку трафиика в системах Яндекс Директ, Гугл Эдвордс, ФБ и др",
+        "operation_type": "expense",
+        "activity_type": 1
+    }
+},
+{
+    "model": "cashflow.category",
+    "pk": 22,
+    "fields": {
+        "name": "Маркетинговые подрядчики",
+        "description": "Оплата подрядчикам по марктеингу, рекламным агентствам, оплата за настройку рекламных систем, оплата дизайнерам и внештатным копирайтерам,",
+        "operation_type": "expense",
+        "activity_type": 1
+    }
+},
+{
+    "model": "cashflow.category",
+    "pk": 23,
+    "fields": {
+        "name": "Административыне подрядчики",
+        "description": "Оплата сторонним подрядчикам за прочий консалтинг: Финансовый, Юридический, Бухгалтерский, (за исключением марктеингового)",
+        "operation_type": "expense",
+        "activity_type": 1
+    }
+},
+{
+    "model": "cashflow.category",
+    "pk": 24,
+    "fields": {
+        "name": "Содержание торговых точек",
+        "description": "Закупка расходников на торговые точки — фильтры для воды, чековые ленты, мелкая канцелярия, спец-одежда, лампочки, и прочие мелкие расходы по содержанию точки, покупка оборудвоания дешевле $100 ~ 51К тг, оплата труда приходящей уборщицы",
+        "operation_type": "expense",
+        "activity_type": 1
+    }
+},
+{
+    "model": "cashflow.category",
+    "pk": 25,
+    "fields": {
+        "name": "Содержание офиса",
+        "description": "Покупка канцелярии в офис, мелкой оргтехники не дороже $100., покупка воды, покупка хоз товаров, оплата труда приходящей уборщицы.",
+        "operation_type": "expense",
+        "activity_type": 1
+    }
+},
+{
+    "model": "cashflow.category",
+    "pk": 26,
+    "fields": {
+        "name": "Аренда торговых точек",
+        "description": "Платежи за аренду и КУ студии",
+        "operation_type": "expense",
+        "activity_type": 1
+    }
+},
+{
+    "model": "cashflow.category",
+    "pk": 27,
+    "fields": {
+        "name": "Аренда офиса",
+        "description": "Платежи за аренду и КУ офиса",
+        "operation_type": "expense",
+        "activity_type": 1
+    }
+},
+{
+    "model": "cashflow.category",
+    "pk": 28,
+    "fields": {
+        "name": "Покупка наличности",
+        "description": "Комиссии за получение наличных денег",
+        "operation_type": "expense",
+        "activity_type": 1
+    }
+},
+{
+    "model": "cashflow.category",
+    "pk": 29,
+    "fields": {
+        "name": "Получение кредитов и займов",
+        "description": "Нам дали в долг",
+        "operation_type": "income",
+        "activity_type": 3
+    }
+},
+{
+    "model": "cashflow.category",
+    "pk": 30,
+    "fields": {
+        "name": "Оплаты по кредитам и займам",
+        "description": "Мы оплатили наши кредиты и займы",
+        "operation_type": "expense",
+        "activity_type": 3
+    }
+},
+{
+    "model": "cashflow.category",
+    "pk": 31,
+    "fields": {
+        "name": "Вклады/инвестиции от собственников",
+        "description": "Собственник вложил деньги в бизнес",
+        "operation_type": "income",
+        "activity_type": 3
+    }
+},
+{
+    "model": "cashflow.category",
+    "pk": 32,
+    "fields": {
+        "name": "Дивиденды",
+        "description": "Выплата дивидендов собственникам",
+        "operation_type": "expense",
+        "activity_type": 3
+    }
+},
+{
+    "model": "cashflow.category",
+    "pk": 33,
+    "fields": {
+        "name": "Выкуп доли",
+        "description": "Выкуп доли у партнёра / Выкуп собственных акций",
+        "operation_type": "expense",
+        "activity_type": 3
+    }
+},
+{
+    "model": "cashflow.category",
+    "pk": 34,
+    "fields": {
+        "name": "Продажа ОС",
+        "description": "Продажа мебели, техники",
+        "operation_type": "income",
+        "activity_type": 2
+    }
+},
+{
+    "model": "cashflow.category",
+    "pk": 35,
+    "fields": {
+        "name": "Покупка ОС",
+        "description": "Покупка мебели, техники",
+        "operation_type": "expense",
+        "activity_type": 2
+    }
+},
+{
+    "model": "cashflow.category",
+    "pk": 36,
+    "fields": {
+        "name": "Ремонт ОС",
+        "description": "Капитальный ремонт техники — приводит к увеличению текущей стойимости, и продлевает срок службы",
+        "operation_type": "expense",
+        "activity_type": 2
+    }
+},
+{
+    "model": "cashflow.category",
+    "pk": 37,
+    "fields": {
+        "name": "Выдача кредитов и займов",
+        "description": "Мы выдали кредит или займ",
+        "operation_type": "expense",
+        "activity_type": 2
+    }
+},
+{
+    "model": "cashflow.category",
+    "pk": 38,
+    "fields": {
+        "name": "Возврат кредитов и займов",
+        "description": "",
+        "operation_type": "income",
+        "activity_type": 2
+    }
+},
+{
+    "model": "cashflow.category",
+    "pk": 39,
+    "fields": {
+        "name": "Прочие поступл. от фин. операций",
+        "description": "Проценты на остаток по РС",
+        "operation_type": "income",
+        "activity_type": 2
+    }
+}
+]
