@@ -11,22 +11,25 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+import os
+import environ
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+# Создаём экземпляр environ.Env
+env = environ.Env(
+    DEBUG=(bool, False)  # Значение по умолчанию для DEBUG
+)
 
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-bf^&zs1ydm)yep1@#%2yec3)zj#nllfi_vbj2k0!q4-bg=mklz'
+# Определяем, какое окружение использовать (по умолчанию dev)
+ENV_FILE = os.getenv("DJANGO_ENV", ".env.dev")
+env.read_env(os.path.join(BASE_DIR, ENV_FILE))
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
-
+DEBUG = env('DEBUG')
+SECRET_KEY = env('SECRET_KEY')
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[])
 
 # Application definition
 
@@ -82,11 +85,11 @@ WSGI_APPLICATION = 'terminapp.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'terminal',
-        'USER': 'terminaluser',
-        'PASSWORD': 'kb971033',
-        'HOST': 'db',
-        'PORT': '5432',
+        'NAME': env('DATABASE_NAME'),
+        'USER': env('DATABASE_USER'),
+        'PASSWORD': env('DATABASE_PASSWORD'),
+        'HOST': env('DATABASE_HOST', default='db'),
+        'PORT': env('DATABASE_PORT', default='5432'),
     }
 }
 
