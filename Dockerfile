@@ -8,9 +8,7 @@ WORKDIR /app
 COPY requirements.txt .
 
 # Устанавливаем системные зависимости и утилиты
-RUN apt-get update && \
-    apt-get install -y iputils-ping postgresql-client && \
-    rm -rf /var/lib/apt/lists/*
+
 
 # Устанавливаем зависимости Python
 RUN pip install --no-cache-dir -r requirements.txt

@@ -94,8 +94,8 @@ class OrderItem(models.Model):
         on_delete=models.CASCADE,
         related_name="order_items",
         verbose_name="Заказ",
-        null=True,
-        blank=True
+        null=False,
+        blank=False
     )
 
     def clean(self):

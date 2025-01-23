@@ -45,7 +45,7 @@ INSTALLED_APPS = [
     'cashflow',
     'clients',
     'analytics',
-
+    'booking',
 ]
 
 MIDDLEWARE = [
