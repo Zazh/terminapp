@@ -46,7 +46,12 @@ INSTALLED_APPS = [
     'clients',
     'analytics',
     'booking',
+    'account',
 ]
+
+# В settings.py добавьте
+AUTH_USER_MODEL = 'account.User'
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
