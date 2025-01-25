@@ -1,41 +1,56 @@
-# models.py
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
+
 class AccountManager(BaseUserManager):
     def create_user(self, username=None, email=None, phone_number=None, password=None, **extra_fields):
-        if not username and not email and not phone_number:
-            raise ValueError(_('Users must have a username, email, or phone number.'))
+        """
+        Базовый метод для создания пользователя без дополнительных флагов.
+        """
+        if not (username or email or phone_number):
+            raise ValueError(_("Users must have a username, email, or phone number."))
 
-        # Логика для суперпользователя
-        if extra_fields.get('is_superuser'):
-            if not username:
-                raise ValueError(_('Superuser must have a username.'))
-            user = self.model(username=username, email=email, **extra_fields)
-
-        # Логика для сотрудников
-        elif extra_fields.get('is_staff'):
-            if not email:
-                raise ValueError(_('Staff must have an email address.'))
-            user = self.model(username=username, email=email, **extra_fields)
-
-        # Логика для клиентов
-        else:
-            if not phone_number:
-                raise ValueError(_('Clients must have a phone number.'))
-            user = self.model(username=username, phone_number=phone_number, **extra_fields)
-
+        user = self.model(
+            username=username,
+            email=email,
+            phone_number=phone_number,
+            **extra_fields
+        )
         user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, username, email=None, password=None, **extra_fields):
-        extra_fields.setdefault('is_superuser', True)
+    def create_client(self, phone_number, password=None, **extra_fields):
+        """
+        Создание клиента (is_client=True).
+        Предполагаем, что клиент регистрируется по номеру телефона.
+        """
+        if not phone_number:
+            raise ValueError(_("Clients must have a phone number."))
+        extra_fields.setdefault('is_client', True)
+        return self.create_user(phone_number=phone_number, password=password, **extra_fields)
+
+    def create_staff(self, email, password=None, **extra_fields):
+        """
+        Создание сотрудника (is_staff=True).
+        Требуем обязательный email.
+        """
+        if not email:
+            raise ValueError(_("Staff must have an email address."))
         extra_fields.setdefault('is_staff', True)
+        return self.create_user(email=email, password=password, **extra_fields)
+
+    def create_superuser(self, username, email=None, password=None, **extra_fields):
+        """
+        Создание суперпользователя (через `createsuperuser`).
+        Требуем обязательный username (и email — согласно вашему REQUIRED_FIELDS).
+        """
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
 
         if not username:
-            raise ValueError(_('Superuser must have a username.'))
+            raise ValueError(_("Superuser must have a username."))
 
         return self.create_user(username=username, email=email, password=password, **extra_fields)
 
@@ -45,6 +60,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True, null=True, blank=True)
     phone_number = models.CharField(max_length=15, unique=True, null=True, blank=True)
 
+    # Роли
     is_client = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
@@ -54,15 +70,12 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     objects = AccountManager()
 
-    USERNAME_FIELD = 'username'  # Определяет основное поле для аутентификации
-    REQUIRED_FIELDS = ['email']  # Указывает дополнительные обязательные поля для суперпользователя
+    USERNAME_FIELD = 'username'       # для аутентификации через username
+    REQUIRED_FIELDS = ['email']       # дополнительные поля при createsuperuser
 
     def __str__(self):
         return self.username or self.email or self.phone_number
 
     def save(self, *args, **kwargs):
-        if self.is_staff and not self.email:
-            raise ValueError(_('Staff must have an email address.'))
-        if self.is_client and not self.phone_number:
-            raise ValueError(_('Clients must have a phone number.'))
+        # Здесь не проводим "жёстких" проверок, они уже в менеджере.
         super().save(*args, **kwargs)

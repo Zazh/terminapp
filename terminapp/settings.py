@@ -47,11 +47,13 @@ INSTALLED_APPS = [
     'analytics',
     'booking',
     'account',
+    'roles',
 ]
 
-# В settings.py добавьте
+# Custom admin authorizations
 AUTH_USER_MODEL = 'account.User'
-
+LOGIN_REDIRECT_URL = '/account/profile/'  # URL страницы профиля
+LOGOUT_REDIRECT_URL = '/'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

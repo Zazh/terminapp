@@ -1,13 +1,40 @@
-<!doctype html>
+<!-- templates/base.html -->
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport"
-          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Document</title>
+    <title>My Django App</title>
+    <!-- Обычно здесь подключают стили, Bootstrap и т.д. -->
 </head>
 <body>
+    <header>
+        <!-- Шапка сайта, логотип, главное меню, etc. -->
+        <nav>
+            <a href="{% url 'profile' %}">Profile</a> |
+            <a href="{% url 'login' %}">Login</a> |
+            <a href="{% url 'register_client' %}">Register as Client</a> |
+            <a href="{% url 'register_staff' %}">Register as Staff</a>
+        </nav>
+        <hr>
+    </header>
 
+    {% if messages %}
+        <ul>
+            {% for message in messages %}
+                <li>{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <main>
+        {% block content %}
+        <!-- Здесь будет содержимое дочерних шаблонов -->
+        {% endblock %}
+    </main>
+
+    <footer>
+        <hr>
+        <p>© 2025 My Django App</p>
+    </footer>
 </body>
 </html>

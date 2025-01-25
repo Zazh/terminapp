@@ -1,0 +1,19 @@
+<!-- templates/account/login.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<h1>Login</h1>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Login</button>
+</form>
+
+<p>
+    Don't have an account?
+    <a href="{% url 'register_client' %}">Register as Client</a> or
+    <a href="{% url 'register_staff' %}">Register as Staff</a>.
+</p>
+{% endblock %}

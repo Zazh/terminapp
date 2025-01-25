@@ -1,0 +1,22 @@
+<!-- templates/account/profile.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<h1>Welcome, {{ user.username|default:"Anonymous" }}</h1>
+<p>You are successfully logged in!</p>
+
+<h2>Your Profile Information</h2>
+<ul>
+    <li><strong>Username:</strong> {{ user.username }}</li>
+    <li><strong>Email:</strong> {{ user.email }}</li>
+    <li><strong>Phone Number:</strong> {{ user.phone_number }}</li>
+    <li><strong>Date Joined:</strong> {{ user.date_joined }}</li>
+    <li><strong>Last Login:</strong> {{ user.last_login }}</li>
+</ul>
+
+<form method="post" action="{% url 'logout' %}">
+    {% csrf_token %}
+    <button type="submit">Logout</button>
+</form>
+{% endblock %}

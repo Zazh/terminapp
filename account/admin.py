@@ -8,13 +8,14 @@ class UserAdmin(BaseUserAdmin):
         (None, {"fields": ("username", "password")}),
         (_("Personal info"), {"fields": ("email", "phone_number")}),
         (_("Permissions"), {"fields": ("is_active", "is_client", "is_staff", "is_superuser")}),
-        (_("Important dates"), {"fields": ("last_login",)}),  # Убрали date_joined
+        (_("Important dates"), {"fields": ("last_login", "date_joined")}),
     )
     readonly_fields = ("date_joined",)
     add_fieldsets = (
         (None, {
             "classes": ("wide",),
-            "fields": ("username", "email", "phone_number", "password1", "password2", "is_client", "is_staff", "is_superuser"),
+            "fields": ("username", "email", "phone_number", "password1", "password2",
+                       "is_client", "is_staff", "is_superuser"),
         }),
     )
     list_display = ("username", "email", "phone_number", "is_staff", "is_superuser", "is_client", "date_joined")

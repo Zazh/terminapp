@@ -19,6 +19,8 @@ from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('account/', include('account.urls')),
+    path('auth/', include('django.contrib.auth.urls')),  # Подключаем стандартные маршруты авторизации
     # path('cashflow/', include('cashflow.urls')),
     path('products/', include('products.urls')),
     path('clients/', include('clients.urls')),
