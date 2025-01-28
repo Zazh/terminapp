@@ -5,12 +5,13 @@
 {% block content %}
 <h1>Login</h1>
 
+<!-- login.html -->
 <form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Login</button>
+  {% csrf_token %}
+  {{ form.identifier.label_tag }} {{ form.identifier }}
+  {{ form.password.label_tag }} {{ form.password }}
+  <button type="submit">Войти</button>
 </form>
-
 <p>
     Don't have an account?
     <a href="{% url 'register_client' %}">Register as Client</a> or

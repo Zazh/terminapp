@@ -55,6 +55,11 @@ AUTH_USER_MODEL = 'account.User'
 LOGIN_REDIRECT_URL = '/account/profile/'  # URL страницы профиля
 LOGOUT_REDIRECT_URL = '/'
 
+AUTHENTICATION_BACKENDS = [
+    'account.authentication.MultiIdentifierAuthBackend',
+    'django.contrib.auth.backends.ModelBackend',  # Резервный вариант
+]
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
