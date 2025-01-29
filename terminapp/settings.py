@@ -47,7 +47,24 @@ INSTALLED_APPS = [
     'booking',
     'account',
     'roles',
+    'rest_framework',
+    'django_filters',
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+    ],
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',  # Для фильтрации
+        'rest_framework.filters.SearchFilter',  # Для поиска
+        'rest_framework.filters.OrderingFilter',  # Для сортировки
+    ]
+}
 
 # Custom admin authorizations
 AUTH_USER_MODEL = 'account.User'

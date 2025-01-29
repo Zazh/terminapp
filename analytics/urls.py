@@ -1,8 +1,11 @@
-# analytics/urls.py
-from django.urls import path
-from .views import dashboard, transaction_report
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .api import ReportViewSet, AnalyticsViewSet
+
+router = DefaultRouter()
+router.register(r'reports', ReportViewSet)
+router.register(r'analytics', AnalyticsViewSet, basename='analytics')
 
 urlpatterns = [
-    path('dashboard/', dashboard, name='analytics_dashboard'),
-    path('transaction-report/', transaction_report, name='transaction_report'),
+    path('', include(router.urls)),
 ]

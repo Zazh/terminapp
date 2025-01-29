@@ -61,7 +61,22 @@ def get_cashflow_data():
             )
         ),
     )
-    return {'details': list(data), 'total': total}
+    return {
+        'details': [
+            {
+                'activity_type': item['activity_type'],  # Используем алиас
+                'income': item['income'],
+                'expense': item['expense'],
+                'net_flow': item['net_flow']
+            }
+            for item in data
+        ],
+        'total': {
+            'income': total['income'] or 0,
+            'expense': total['expense'] or 0,
+            'net_flow': total['net_flow'] or 0
+        }
+    }
 
 
 

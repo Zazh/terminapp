@@ -1,13 +1,33 @@
 # cashflow/models.py
 from django.db import models
-from django.db.models import Sum, Case, When, F, DecimalField
+from django.db.models import Sum, Case, When, F, DecimalField, Value
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
+
+class WalletQuerySet(models.QuerySet):
+    def annotate_balance(self):
+        return self.annotate(
+            balance=Sum(
+                Case(
+                    When(
+                        transactions__category__operation_type__in=['income', 'technical_income'],
+                        then=F('transactions__amount')
+                    ),
+                    When(
+                        transactions__category__operation_type__in=['expense', 'technical_expense'],
+                        then=-F('transactions__amount')
+                    ),
+                    default=Value(0),
+                    output_field=DecimalField(max_digits=10, decimal_places=2)
+                )
+            )
+        )
 
 class Wallet(models.Model):
     """
     Кошелёк, содержащий средства.
     """
+    objects = WalletQuerySet.as_manager()  # Важно!
     name = models.CharField("Название кошелька", max_length=255, unique=True)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата обновления")

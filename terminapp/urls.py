@@ -24,6 +24,8 @@ urlpatterns = [
     # path('cashflow/', include('cashflow.urls')),
     path('products/', include('products.urls')),
     path('clients/', include('clients.urls')),
-    path('analytics/', include('analytics.urls')),
+    # path('analytics/', include('analytics.urls')),
     path('orders/', include('orders.urls', namespace='orders')),
+    path('api/cashflow/', include('cashflow.urls')),
+    path('api/', include('analytics.urls')),
 ]
