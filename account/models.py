@@ -1,94 +1,57 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
-from django.core.exceptions import ValidationError  # Добавить в импорты
-from django.utils.translation import gettext_lazy as _  # Добавить этот импорт
+from django.core.exceptions import ValidationError
+from django.utils.translation import gettext_lazy as _
 import re
 
 
 class UserManager(BaseUserManager):
-    def create_user(self, identifier_field, identifier_value, password=None, **extra_fields):
+    def create_user(self, email, password=None, **extra_fields):
         """
-        Универсальный метод создания пользователя
+        Базовый метод создания пользователя.
+        Аутентификация по email, поэтому email обязателен.
         """
-        if not identifier_value:
-            raise ValueError(_("User must have at least one identifier"))
+        if not email:
+            raise ValueError(_("Users must have an email address"))
 
-        user = self.model(**{identifier_field: identifier_value}, **extra_fields)
+        email = self.normalize_email(email)
+
+        # Проверка длины email
+        if len(email) > 254:
+            raise ValidationError(_("Email is too long (maximum 254 characters)."))
+
+        user = self.model(email=email, **extra_fields)
         user.set_password(password)
+        user.full_clean()  # Вызывает clean() перед сохранением
         user.save(using=self._db)
         return user
 
-    def create_client(self, phone_number, password=None, **extra_fields):
-        if not re.match(r'^\+?1?\d{9,15}$', phone_number):
-            raise ValueError(_("Invalid phone number format"))
-
-        return self.create_user(
-            identifier_field='phone_number',
-            identifier_value=phone_number,
-            password=password,
-            role=User.Role.CLIENT,
-            **extra_fields
-        )
-
-    def create_staff(self, email, password=None, **extra_fields):
-        if not email.endswith('@company.com'):
-            raise ValueError(_("Only company emails allowed"))
-
-        return self.create_user(
-            identifier_field='email',
-            identifier_value=email,
-            password=password,
-            role=User.Role.STAFF,
-            **extra_fields
-        )
-
     def create_superuser(self, email, password=None, **extra_fields):
-        extra_fields.setdefault('role', User.Role.ADMIN)
+        """
+        Создаёт суперпользователя (is_staff, is_superuser = True).
+        """
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
 
-        return self.create_user(
-            identifier_field='email',
-            identifier_value=email,
-            password=password,
-            **extra_fields
-        )
+        if extra_fields.get('is_staff') is not True:
+            raise ValueError(_("Superuser must have is_staff=True."))
+        if extra_fields.get('is_superuser') is not True:
+            raise ValueError(_("Superuser must have is_superuser=True."))
+
+        return self.create_user(email, password, **extra_fields)
 
 
 class User(AbstractBaseUser, PermissionsMixin):
-    class Role(models.TextChoices):
-        CLIENT = 'CLIENT', _('Client')
-        STAFF = 'STAFF', _('Staff')
-        ADMIN = 'ADMIN', _('Admin')
-
-    username = models.CharField(
-        max_length=150,
-        unique=True,
-        null=True,
-        blank=True,
-        default=None,
-        error_messages={'unique': _("A user with that username already exists.")}
-    )
+    """
+    Упрощённая модель пользователя с email-аутентификацией.
+    Поля username, phone_number, role удалены.
+    """
     email = models.EmailField(
         unique=True,
-        null=True,
-        blank=True,
-        default=None,
+        null=False,
+        blank=False,
+        max_length=254,
         error_messages={'unique': _("A user with that email already exists.")}
-    )
-    phone_number = models.CharField(
-        max_length=15,
-        unique=True,
-        null=True,
-        blank=True,
-        default=None,
-        error_messages={'unique': _("A user with that phone number already exists.")}
-    )
-
-    role = models.CharField(
-        max_length=7,
-        choices=Role.choices,
-        default=Role.CLIENT
     )
 
     is_staff = models.BooleanField(default=False)
@@ -98,46 +61,42 @@ class User(AbstractBaseUser, PermissionsMixin):
     objects = UserManager()
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = []
+    REQUIRED_FIELDS = []  # При создании суперпользователя из CLI не спрашиваем ничего кроме email
 
     class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=['email'],
-                name='unique_email',
-                condition=models.Q(email__isnull=False)
-            ),
-            models.UniqueConstraint(
-                fields=['phone_number'],
-                name='unique_phone',
-                condition=models.Q(phone_number__isnull=False)
-            ),
-            models.UniqueConstraint(
-                fields=['username'],
-                name='unique_username',
-                condition=models.Q(username__isnull=False)
-            )
-        ]
-        indexes = [
-            models.Index(fields=['email']),
-            models.Index(fields=['phone_number']),
-            models.Index(fields=['username']),
-        ]
+        verbose_name = "user"
+        verbose_name_plural = "users"
 
     def __str__(self):
-        return self.get_identifier()
-
-    def get_identifier(self):
-        return self.email or self.phone_number or self.username
+        return self.email
 
     def clean(self):
-        if not any([self.email, self.phone_number, self.username]):
-            raise ValidationError(_("At least one identifier must be provided"))
+        """
+        Валидация перед сохранением объекта.
+        """
+        super().clean()
 
-    @property
-    def is_client(self):
-        return self.role == self.Role.CLIENT
+        # Проверяем email на корректный формат
+        email_regex = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+        if not re.match(email_regex, self.email):
+            raise ValidationError(_("Invalid email format."))
+
+        # Убеждаемся, что email всегда в нижнем регистре
+        self.email = self.email.lower().strip()
+
+    def save(self, *args, **kwargs):
+        """
+        Гарантирует, что email всегда сохраняется в нижнем регистре.
+        """
+        self.email = self.email.lower().strip()
+        super().save(*args, **kwargs)
 
     @property
     def is_admin(self):
-        return self.role == self.Role.ADMIN
+        """Проверяет, является ли пользователь администратором."""
+        return self.is_superuser
+
+    @property
+    def is_employee(self):
+        """Проверяет, является ли пользователь сотрудником (но не суперпользователем)."""
+        return self.is_staff and not self.is_superuser

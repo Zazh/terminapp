@@ -29,8 +29,7 @@ env.read_env(os.path.join(BASE_DIR, ENV_FILE))
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env('DEBUG')
 SECRET_KEY = env('SECRET_KEY')
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[])
-
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0").split(",")
 # Application definition
 
 INSTALLED_APPS = [
@@ -56,9 +55,10 @@ LOGIN_REDIRECT_URL = '/account/profile/'  # URL страницы профиля
 LOGOUT_REDIRECT_URL = '/'
 
 AUTHENTICATION_BACKENDS = [
-    'account.authentication.MultiIdentifierAuthBackend',
-    'django.contrib.auth.backends.ModelBackend',  # Резервный вариант
+    'account.authentication.EmailAuthBackend',  # Новый кастомный backend
+    'django.contrib.auth.backends.ModelBackend',  # Django ModelBackend
 ]
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

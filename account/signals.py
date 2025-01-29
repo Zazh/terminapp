@@ -4,4 +4,4 @@ from django.contrib import messages
 
 @receiver(user_logged_in)
 def notify_login(sender, request, user, **kwargs):
-    messages.success(request, f'Welcome back, {user.username or user.email or user.phone_number}!')
+    messages.success(request, f'Welcome back, {user.email}!')
