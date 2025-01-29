@@ -45,10 +45,7 @@ class WalletViewSet(BaseViewSet):
     ordering_fields = ['name', 'balance']
 
     def get_queryset(self):
-        """Аннотируем баланс с оптимизацией запроса"""
-        return Wallet.objects.annotate_balance().select_related(
-            'content_type'
-        ).order_by('-balance')
+        return Wallet.objects.annotate_balance().order_by('-balance')
 
     # Добавьте явный queryset для совместимости
     queryset = Wallet.objects.all()
