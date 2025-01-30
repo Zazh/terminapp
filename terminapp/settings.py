@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'account',
     'rest_framework',
     'django_filters',
+    'hr',
 ]
 
 REST_FRAMEWORK = {
