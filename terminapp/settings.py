@@ -46,7 +46,6 @@ INSTALLED_APPS = [
     'analytics',
     'booking',
     'account',
-    'roles',
     'rest_framework',
     'django_filters',
 ]

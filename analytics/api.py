@@ -80,51 +80,35 @@ class AnalyticsViewSet(BaseViewSet):
     """Аналитические данные с фильтрацией в UI"""
     filterset_class = AnalyticsFilter
     filter_backends = [DjangoFilterBackend]
-    queryset = []  # Фиктивный queryset для DRF
+    queryset = Transaction.objects.none()
 
-    # Явно указываем, что не используем стандартный queryset
-    def get_queryset(self):
-        return Transaction.objects.none()
+    def list(self, request, *args, **kwargs):
+        """Заглушка для базового URL"""
+        return Response(
+            {
+                "detail": "Используйте кастомные экшены:",
+                "available_endpoints": {
+                    "wallet_balances": "/wallet_balances/",
+                    "cashflow": "/cashflow/"
+                }
+            },
+            status=status.HTTP_200_OK
+        )
 
     @action(detail=False, methods=['get'], url_path='wallet_balances')
     def get_wallet_balances(self, request):
         """Балансы кошельков с фильтрацией"""
-        try:
-            # Получаем параметры фильтрации из запроса
-            filters = {
-                'wallet_id': request.query_params.get('wallet'),
-                'start_date': request.query_params.get('start_date'),
-                'end_date': request.query_params.get('end_date'),
-            }
-            balances = get_wallet_data(**filters)
-            serializer = WalletBalanceSerializer(balances, many=True)
-            return Response(serializer.data)
-        except Exception as e:
-            return Response(
-                {"error": str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+        filters = self.filterset_class(request.GET, queryset=self.queryset).data
+        balances = get_wallet_data(**filters)
+        serializer = WalletBalanceSerializer(balances, many=True)
+        return Response(serializer.data)
 
     @action(detail=False, methods=['get'])
     def cashflow(self, request):
         """Анализ денежных потоков с фильтрацией"""
-        try:
-            # Получаем параметры фильтрации из запроса
-            filters = {
-                'start_date': request.query_params.get('start_date'),
-                'end_date': request.query_params.get('end_date'),
-                'activity_type': request.query_params.get('category_type'),
-                'wallet_id': request.query_params.get('wallet'),
-            }
-            data = get_cashflow_data(**filters)
-            details_serializer = CashflowAnalysisSerializer(data['details'], many=True)
-            total_serializer = CashflowTotalSerializer(data['total'])
-            return Response({
-                "details": details_serializer.data,
-                "total": total_serializer.data
-            })
-        except Exception as e:
-            return Response(
-                {"error": str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+        filters = self.filterset_class(request.GET, queryset=self.queryset).data
+        data = get_cashflow_data(**filters)
+        return Response({
+            "details": CashflowAnalysisSerializer(data['details'], many=True).data,
+            "total": CashflowTotalSerializer(data['total']).data
+        })
