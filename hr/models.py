@@ -3,6 +3,7 @@
 from django.db import models
 from django.conf import settings
 from django.contrib.auth.models import Group
+from companys.models import Company  # Импорт из приложения tenant (companys)
 
 STATUS_CHOICES = (
     ('ACTIVE', 'Active'),
@@ -14,27 +15,45 @@ STATUS_CHOICES = (
 
 class Department(models.Model):
     """
-    Справочник департаментов
+    Справочник департаментов в рамках одной компании.
     """
-    name = models.CharField(max_length=255, unique=True)
-    code = models.CharField(max_length=50, unique=True, null=True, blank=True)
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name='departments'
+    )
+    # Убираем unique=True, чтобы Department "HR" мог существовать в разных компаниях
+    name = models.CharField(max_length=255)
+    # Аналогично для code, можно оставить уникальность глобально, если бизнес-требование такое:
+    code = models.CharField(max_length=50, null=True, blank=True)
 
     class Meta:
+        # Имя департамента не должно повторяться в рамках одной company
+        unique_together = ('company', 'name')
         verbose_name = 'Department'
         verbose_name_plural = 'Departments'
 
     def __str__(self):
-        return self.name
+        return f"{self.name} ({self.company.name})"
 
 
 class Role(models.Model):
     """
-    Роль, привязанная к департаменту и Django Group (для прав).
+    Роль, привязанная к компании (Tenant) и, при необходимости, к департаменту.
+    Можно также хранить связь с Django Group для прав.
     """
-    name = models.CharField(max_length=255, unique=True)
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name='roles'
+    )
+    # Снова убираем global unique=True, т.к. 'Manager' может встречаться в разных компаниях
+    name = models.CharField(max_length=255)
     department = models.ForeignKey(
         Department,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name='roles'
     )
     groups = models.ManyToManyField(
@@ -44,34 +63,41 @@ class Role(models.Model):
     )
 
     class Meta:
+        # Имя роли уникально в рамках одной компании
+        unique_together = ('company', 'name')
         verbose_name = 'Role'
         verbose_name_plural = 'Roles'
 
     def __str__(self):
-        return f"{self.name} ({self.department.name})"
+        dep_info = f" / {self.department.name}" if self.department else ""
+        return f"{self.name} ({self.company.name}{dep_info})"
 
 
 class Employee(models.Model):
     """
-    Тонкая сущность, которая связывает:
-    - Пользователя (User)
-    - Роль (Role)
-    - Статус сотрудника (активен, уволен и т.п.)
+    "Сотрудник" (membership), привязывающий пользователя (User)
+    к конкретной компании. Один user может быть сотрудником
+    в нескольких компаниях, и иметь несколько ролей в одной.
 
-    А также определяем кастомные permissions, если нужны
-    (как пример 'can_approve_vacation', 'can_manage_salaries')
+    Множественные роли:
+    Используем M2M на модель Role (roles).
     """
-    user = models.OneToOneField(
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name='employees'
+    )
+    # ForeignKey, чтобы один пользователь мог иметь несколько Employee-записей (в разных компаниях)
+    user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='employee_profile'
+        related_name='employee_profiles'
     )
-    role = models.ForeignKey(
+    # Вместо одного role — M2M, чтобы сотрудник мог иметь несколько ролей
+    roles = models.ManyToManyField(
         Role,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='employees'
+        related_name='employees',
+        blank=True
     )
     status = models.CharField(
         max_length=20,
@@ -88,22 +114,19 @@ class Employee(models.Model):
         )
 
     def __str__(self):
-        # В кастомном User может не быть get_full_name(), поэтому используем username/email
+        # В кастомном User может не быть get_full_name(), поэтому fallback на username/email
         username_display = getattr(self.user, 'username', None) or getattr(self.user, 'email', '')
-        role_name = self.role.name if self.role else 'No Role'
-        return f"{username_display} - {role_name} ({self.get_status_display()})"
+        return f"{username_display} @ {self.company.name} ({self.get_status_display()})"
 
 
 class EmployeeInfo(models.Model):
     """
-    Дополнительная «карточка сотрудника» с подробными данными:
+    Дополнительная "карточка сотрудника" с подробными данными:
     - дата приёма
     - контакты
     - и т. д.
 
-    Связь OneToOne с Employee, чтобы для каждого Employee
-    были свои детальные поля, но при этом Employee
-    оставался "тонкой" связью с User/Role.
+    Связь OneToOne с Employee, чтобы хранить развернутые поля.
     """
     employee = models.OneToOneField(
         Employee,
@@ -112,8 +135,6 @@ class EmployeeInfo(models.Model):
     )
     phone = models.CharField(max_length=20, blank=True, null=True)
     hire_date = models.DateField(blank=True, null=True)
-
-    # Можно добавить любые другие поля: адрес, дата рождения и т. д.
 
     class Meta:
         verbose_name = 'Employee Info'

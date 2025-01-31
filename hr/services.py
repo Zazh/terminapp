@@ -1,26 +1,29 @@
 # hr/services.py
 
+from django.contrib.auth.models import Group
 from .models import Employee
-
 
 def sync_user_groups(employee: Employee):
     """
     Синхронизирует группы пользователя (User.groups)
-    с группами, привязанными к Role сотрудника.
-    Если Role нет или сотрудник уволен, то (по умолчанию) очищаем группы.
+    со всеми группами, привязанными к Ролям (Role) сотрудника.
+    Если ролей нет или сотрудник уволен (либо не активен),
+    очищаем группы по умолчанию.
 
-    При необходимости логику можно усложнить: если сотрудник
-    "ON_LEAVE", оставить некоторые доступы и т. п.
+    При необходимости логику можно усложнить:
+    - Если status == 'ON_LEAVE', оставить только часть групп и т. п.
     """
     user = employee.user
-    role = employee.role
+    roles_qs = employee.roles.all()
 
-    if role and employee.status == 'ACTIVE':
-        role_groups = role.groups.all()
-        user.groups.set(role_groups)
+    if roles_qs.exists() and employee.status == 'ACTIVE':
+        # Собираем все группы из всех ролей
+        # Подразумевается, что у Role есть ManyToManyField к Group: role.groups
+        # Можно сделать «глобальный» запрос через Group.objects.filter(...)
+        all_role_groups = Group.objects.filter(hr_roles__in=roles_qs).distinct()
+        user.groups.set(all_role_groups)
     else:
-        # Если роль не указана или сотрудник не "ACTIVE",
-        # то очищаем все группы
+        # Если нет ролей или сотрудник не "ACTIVE", то очищаем все группы
         user.groups.clear()
 
     user.save()

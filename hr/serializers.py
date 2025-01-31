@@ -27,19 +27,29 @@ class EmployeeInfoSerializer(serializers.ModelSerializer):
 
 
 class EmployeeSerializer(serializers.ModelSerializer):
-    # Пример вывода статуса «человеческим» языком
+    """
+    Сериализатор сотрудника.
+    - Выводим status_display (текстовое значение статуса).
+    - Вкладываем info (read-only), чтобы одним запросом получать данные EmployeeInfo.
+    - Вместо role теперь делаем roles (ManyToMany).
+    """
     status_display = serializers.CharField(source='get_status_display', read_only=True)
-    # Вложенный сериализатор EmployeeInfo (если нужно получать данные в одном запросе)
     info = EmployeeInfoSerializer(read_only=True)
+
+    # Пример: если хотим давать возможность управлять ролями по ID:
+    roles = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=Role.objects.all()
+    )
 
     class Meta:
         model = Employee
         fields = [
             'id',
-            'user',       # Обычно PK, можно сделать PrimaryKeyRelatedField
-            'role',
+            'company',      # Если хотим видеть/управлять company здесь (не всегда безопасно)
+            'user',         # PK: можно скрыть или сделать read_only, по вашему выбору
+            'roles',        # Замена поля 'role' → 'roles' (M2M)
             'status',
             'status_display',
-            'info',       # Вложенный read-only (пр. GET)
+            'info',
         ]
-

@@ -5,23 +5,25 @@ from .models import Department, Role, Employee, EmployeeInfo
 
 @admin.register(Department)
 class DepartmentAdmin(admin.ModelAdmin):
-    list_display = ('name', 'code')
-    search_fields = ('name', 'code')
+    list_display = ('name', 'company')
+    list_filter = ('company',)
+    search_fields = ('name', 'company__name')
 
 
 @admin.register(Role)
 class RoleAdmin(admin.ModelAdmin):
-    list_display = ('name', 'department')
-    list_filter = ('department',)
-    search_fields = ('name', 'department__name')
-    filter_horizontal = ('groups',)
+    list_display = ('name', 'company', 'department')
+    list_filter = ('company', 'department')
+    search_fields = ('name', 'company__name', 'department__name')
+    filter_horizontal = ('groups',)  # Если Role.groups связаны с Django Groups
 
 
 @admin.register(Employee)
 class EmployeeAdmin(admin.ModelAdmin):
-    list_display = ('user', 'role', 'status')
-    list_filter = ('role__department', 'status')
-    search_fields = ('user__username', 'user__email', 'role__name')
+    list_display = ('user', 'company', 'status')
+    list_filter = ('company', 'status')
+    search_fields = ('user__username', 'user__email', 'company__name')
+    filter_horizontal = ('roles',)  # M2M-field для ролей
 
 
 @admin.register(EmployeeInfo)
