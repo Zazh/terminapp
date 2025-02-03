@@ -1,28 +1,69 @@
-version: '3.8'  # Всегда указывайте версию Compose
-
 services:
+  traefik:
+    image: traefik:v2.9
+    container_name: traefik
+    restart: always
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    depends_on:
+      - web
+
   web:
     build:
       context: .
       dockerfile: Dockerfile
-    ports:
-      - "8001:8001"
+    container_name: django_web
     volumes:
       - .:/app
+    env_file:
+      - .env
     environment:
       - PYTHONUNBUFFERED=1
-    env_file:
-      - .env.dev
     depends_on:
       - db
     command: python manage.py runserver 0.0.0.0:8001
+    expose:
+      - "8001"
+    labels:
+      - "traefik.enable=true"
+
+      # Роутер для главного домена (hero app)
+      - "traefik.http.routers.hero.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.hero.entrypoints=web"
+      - "traefik.http.routers.hero.service=heroService"
+      - "traefik.http.services.heroService.loadbalancer.server.port=8001"
+      - "traefik.http.services.heroService.loadbalancer.server.scheme=http"
+
+      # Роутер для админки
+      - "traefik.http.routers.admin.rule=Host(`admin.${DOMAIN}`)"
+      - "traefik.http.routers.admin.entrypoints=web"
+      - "traefik.http.routers.admin.service=adminService"
+      - "traefik.http.services.adminService.loadbalancer.server.port=8001"
+      - "traefik.http.services.adminService.loadbalancer.server.scheme=http"
+
+      # Роутер для API
+      - "traefik.http.routers.api.rule=Host(`api.${DOMAIN}`)"
+      - "traefik.http.routers.api.entrypoints=web"
+      - "traefik.http.routers.api.service=apiService"
+      - "traefik.http.services.apiService.loadbalancer.server.port=8001"
+      - "traefik.http.services.apiService.loadbalancer.server.scheme=http"
 
   db:
     image: postgres:15
+    env_file:
+      - .env
     environment:
-      POSTGRES_DB: ${DATABASE_NAME}
-      POSTGRES_USER: ${DATABASE_USER}
-      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_DB: "${DATABASE_NAME}"
+      POSTGRES_USER: "${DATABASE_USER}"
+      POSTGRES_PASSWORD: "${DATABASE_PASSWORD}"
     ports:
       - "5432:5432"
     volumes:

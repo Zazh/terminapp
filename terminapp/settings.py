@@ -23,14 +23,15 @@ env = environ.Env(
 )
 
 # Определяем, какое окружение использовать (по умолчанию dev)
-ENV_FILE = os.getenv("DJANGO_ENV", ".env.dev")
+ENV_FILE = os.getenv("DJANGO_ENV", ".env")
 env.read_env(os.path.join(BASE_DIR, ENV_FILE))
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env('DEBUG')
+DEBUG = env.bool('DEBUG', default=False)
 SECRET_KEY = env('SECRET_KEY')
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0").split(",")
-# Application definition
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1", "0.0.0.0"])
+
+DOMAIN = env('DOMAIN', default='lvh.me')
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -50,6 +51,8 @@ INSTALLED_APPS = [
     'django_filters',
     'hr',
     'companys',
+    'hero',
+    'admin_restrict',
 ]
 
 REST_FRAMEWORK = {
@@ -77,7 +80,6 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',  # Django ModelBackend
 ]
 
-
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -86,6 +88,10 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+    'companys.middleware.TenantMiddleware',  # генерация поддоменов для компаний
+    'hero.middleware.SwitchUrlConfMiddleware',  # Переключатель URLconf для главного домена
+    'admin_restrict.middleware.AdminRestrictMiddleware',  # Ограничение доступа к /admin
 ]
 
 ROOT_URLCONF = 'terminapp.urls'
@@ -108,20 +114,17 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'terminapp.wsgi.application'
 
-
-# Database
-# https://docs.djangoproject.com/en/5.1/ref/settings/#databases
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': env('DATABASE_NAME'),
-        'USER': env('DATABASE_USER'),
-        'PASSWORD': env('DATABASE_PASSWORD'),
+        'NAME': env('DATABASE_NAME', default='terminal'),
+        'USER': env('DATABASE_USER', default='terminaluser'),
+        'PASSWORD': env('DATABASE_PASSWORD', default='kb971033'),
         'HOST': env('DATABASE_HOST', default='db'),
         'PORT': env('DATABASE_PORT', default='5432'),
     }
 }
+
 
 
 # Password validation

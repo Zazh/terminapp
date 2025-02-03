@@ -18,18 +18,21 @@ from django.contrib import admin
 from django.urls import path, include
 
 urlpatterns = [
+    # admin.domain.com / admin_restrict
     path('admin/', admin.site.urls),
-    path('api/account/', include('account.urls')),
-    path('auth/', include('django.contrib.auth.urls')),
+
+    # главная страница domain.com - использует hero app middlewere
+    path('', include('hero.urls')),
 
     path('products/', include('products.urls')),
     path('clients/', include('clients.urls')),
-
     path('orders/', include('orders.urls', namespace='orders')),
 
+    # API-эндпоинты (например, под /api/...)
+    path('api/account/', include('account.urls')),
+    path('api/companys/', include('companys.urls')),
+    path('api/hr/', include('hr.urls')),
     path('api/cashflow/', include('cashflow.urls')),
     path('api/analytics/', include('analytics.urls')),
-
-    path('api/hr/', include('hr.urls')),
 
 ]
