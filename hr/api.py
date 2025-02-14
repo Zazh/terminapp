@@ -9,26 +9,24 @@ from hr.serializers import CompanySerializer, EmployeeInvitationCreateSerializer
 from hr.models import EmployeeInvitation
 from hr.services import create_company
 
-
-def create(request):
-    serializer = CompanySerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    try:
-        company = create_company(
-            owner=request.user,
-            name=serializer.validated_data['name'],
-            subdomain=serializer.validated_data['subdomain'],
-            billing_plan=serializer.validated_data.get('billing_plan', 'basic')
-        )
-    except Exception as e:
-        return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-    output_serializer = CompanySerializer(company)
-    return Response(output_serializer.data, status=status.HTTP_201_CREATED)
-
-
 class CompanyViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
+
+    def create(self, request):
+        serializer = CompanySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            company = create_company(
+                owner=request.user,
+                name=serializer.validated_data['name'],
+                subdomain=serializer.validated_data['subdomain'],
+                billing_plan=serializer.validated_data.get('billing_plan', 'BASE')
+            )
+        except Exception as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        output_serializer = CompanySerializer(company)
+        return Response(output_serializer.data, status=status.HTTP_201_CREATED)
 
 
 class EmployeeInvitationViewSet(viewsets.ModelViewSet):
@@ -38,10 +36,7 @@ class EmployeeInvitationViewSet(viewsets.ModelViewSet):
     """
     permission_classes = [IsAuthenticated]
     serializer_class = EmployeeInvitationCreateSerializer
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.link_with_token = None
+    link_with_token = None  # атрибут класса
 
     def get_queryset(self):
         user = self.request.user
