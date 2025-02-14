@@ -1,55 +1,70 @@
 # hr/serializers.py
-
 from rest_framework import serializers
-from .models import (
-    Department,
-    Role,
-    Employee,
-    EmployeeInfo,
-)
+from hr.models import Company, EmployeeInvitation, Employee
+from django.contrib.auth import get_user_model
+from django.utils import timezone
+import datetime
 
-class DepartmentSerializer(serializers.ModelSerializer):
+class CompanySerializer(serializers.ModelSerializer):
     class Meta:
-        model = Department
-        fields = '__all__'
+        model = Company
+        fields = ('id', 'name', 'subdomain', 'billing_plan', 'created_at')
+        read_only_fields = ('id', 'created_at')
 
 
-class RoleSerializer(serializers.ModelSerializer):
+class EmployeeInvitationCreateSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Role
-        fields = '__all__'
+        model = EmployeeInvitation
+        fields = ('id', 'email', 'token', 'status', 'created_at', 'expires_at')
+        read_only_fields = ('id', 'token', 'status', 'created_at', 'expires_at')
+
+    def create(self, validated_data):
+        # Автоматически устанавливаем срок действия приглашения (например, 48 часов)
+        validated_data['expires_at'] = timezone.now() + datetime.timedelta(hours=48)
+        return super().create(validated_data)
 
 
-class EmployeeInfoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = EmployeeInfo
-        fields = '__all__'
+User = get_user_model()
+
+class InvitationAcceptSerializer(serializers.Serializer):
+    token = serializers.CharField(write_only=True)
+    password = serializers.CharField(write_only=True, min_length=8)
+
+    def validate(self, data):
+        token = data.get('token')
+        try:
+            invitation = EmployeeInvitation.objects.get(token=token, status='PENDING')
+        except EmployeeInvitation.DoesNotExist:
+            raise serializers.ValidationError("Неверный или недействительный токен приглашения.")
+
+        if invitation.expires_at < timezone.now():
+            raise serializers.ValidationError("Срок действия приглашения истёк.")
+
+        data['invitation'] = invitation
+        return data
 
 
-class EmployeeSerializer(serializers.ModelSerializer):
-    """
-    Сериализатор сотрудника.
-    - Выводим status_display (текстовое значение статуса).
-    - Вкладываем info (read-only), чтобы одним запросом получать данные EmployeeInfo.
-    - Вместо role теперь делаем roles (ManyToMany).
-    """
-    status_display = serializers.CharField(source='get_status_display', read_only=True)
-    info = EmployeeInfoSerializer(read_only=True)
+    def create(self, validated_data):
+        invitation = validated_data['invitation']
+        password = validated_data['password']
+        # username = validated_data.get('username') or invitation.email
 
-    # Пример: если хотим давать возможность управлять ролями по ID:
-    roles = serializers.PrimaryKeyRelatedField(
-        many=True,
-        queryset=Role.objects.all()
-    )
+        # Проверяем, существует ли пользователь с таким email
+        if User.objects.filter(email=invitation.email).exists():
+            raise serializers.ValidationError("Пользователь с таким email уже существует.")
 
-    class Meta:
-        model = Employee
-        fields = [
-            'id',
-            'company',      # Если хотим видеть/управлять company здесь (не всегда безопасно)
-            'user',         # PK: можно скрыть или сделать read_only, по вашему выбору
-            'roles',        # Замена поля 'role' → 'roles' (M2M)
-            'status',
-            'status_display',
-            'info',
-        ]
+        # Создаем пользователя
+        user = User.objects.create_user(email=invitation.email, password=password)
+
+        # Создаем профиль сотрудника, связывая его с компанией из приглашения
+        Employee.objects.create(
+            company=invitation.company,
+            user=user,
+            status='ACTIVE'
+        )
+
+        # Помечаем приглашение как принятое
+        invitation.status = "ACCEPTED"
+        invitation.save()
+
+        return user

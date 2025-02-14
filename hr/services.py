@@ -1,29 +1,59 @@
 # hr/services.py
-
+from django.core.exceptions import ValidationError
 from django.contrib.auth.models import Group
-from .models import Employee
+from hr.models import Company, Department, Role, Employee
 
-def sync_user_groups(employee: Employee):
+def create_company(owner, name, subdomain, billing_plan='BASE'):
     """
-    Синхронизирует группы пользователя (User.groups)
-    со всеми группами, привязанными к Ролям (Role) сотрудника.
-    Если ролей нет или сотрудник уволен (либо не активен),
-    очищаем группы по умолчанию.
-
-    При необходимости логику можно усложнить:
-    - Если status == 'ON_LEAVE', оставить только часть групп и т. п.
+    Создает компанию для владельца.
+    1. Проверяет, что у пользователя ещё нет компании.
+    2. Создает объект Company.
+    3. Автоматически создает базовый департамент (например, "Управленческий отдел").
+    4. Создает роль "Администратор" с полным доступом, привязанную к базовому департаменту.
+    5. Создает профиль сотрудника (Employee) для владельца и назначает ему роль "Администратор".
+    6. Создает отдел Владельца".
     """
-    user = employee.user
-    roles_qs = employee.roles.all()
+    # Проверяем, что пользователь еще не является владельцем компании.
+    if hasattr(owner, 'company'):
+        raise ValidationError("Пользователь уже владеет компанией.")
 
-    if roles_qs.exists() and employee.status == 'ACTIVE':
-        # Собираем все группы из всех ролей
-        # Подразумевается, что у Role есть ManyToManyField к Group: role.groups
-        # Можно сделать «глобальный» запрос через Group.objects.filter(...)
-        all_role_groups = Group.objects.filter(hr_roles__in=roles_qs).distinct()
-        user.groups.set(all_role_groups)
-    else:
-        # Если нет ролей или сотрудник не "ACTIVE", то очищаем все группы
-        user.groups.clear()
+    # 1. Создаем компанию
+    company = Company(
+        owner=owner,
+        name=name,
+        subdomain=subdomain,
+        billing_plan=billing_plan
+    )
+    company.full_clean()
+    company.save()
 
-    user.save()
+    # 2. Создаем базовый департамент "Управленческий отдел"
+    default_department = Department.objects.create(
+        company=company,
+        name="Управленческий отдел"
+    )
+
+    # 3. Создаем роль "Администратор" для компании,
+    # привязываем ее к созданному департаменту
+    admin_role = Role.objects.create(
+        company=company,
+        name="Администратор",
+        department=default_department
+    )
+
+    # Получаем (или создаем) группу "administrator" и привязываем её к роли
+    admin_group, _ = Group.objects.get_or_create(name="administrator")
+    admin_role.groups.add(admin_group)
+
+    # 4. Создаем профиль сотрудника для владельца
+    employee = Employee.objects.create(
+        company=company,
+        user=owner,
+        status='ACTIVE'
+    )
+    # Назначаем владельцу роль "Администратор"
+    employee.roles.add(admin_role)
+
+    return company
+
+

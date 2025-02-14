@@ -1,14 +1,27 @@
 from django.db import models
-
+from django.utils.translation import gettext_lazy as _
+from hr.models import Company  # Импорт вашей модели компании
 
 class ProductCategory(models.Model):
-    name = models.CharField(max_length=255, unique=True, verbose_name="Category Name")
-    description = models.TextField(blank=True, null=True, verbose_name="Description")
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated At")
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name="product_categories",
+        verbose_name=_("Company")
+    )
+    name = models.CharField(max_length=255, verbose_name=_("Category Name"))
+    description = models.TextField(blank=True, null=True, verbose_name=_("Description"))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created At"))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Updated At"))
+
+    class Meta:
+        # Название категории должно быть уникально в пределах одной компании
+        unique_together = ("company", "name")
+        verbose_name = _("Product Category")
+        verbose_name_plural = _("Product Categories")
 
     def __str__(self):
-        return self.name
+        return f"{self.name} (Company: {self.company.name})"
 
 
 class Product(models.Model):
@@ -17,46 +30,64 @@ class Product(models.Model):
         ('product', 'Product'),
     ]
 
-    name = models.CharField(max_length=255, verbose_name="Name")
-    description = models.TextField(blank=True, null=True, verbose_name="Description")
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name="products",
+        verbose_name=_("Company")
+    )
+    name = models.CharField(max_length=255, verbose_name=_("Name"))
+    description = models.TextField(blank=True, null=True, verbose_name=_("Description"))
     product_type = models.CharField(
         max_length=10,
         choices=PRODUCT_TYPE_CHOICES,
         default='product',
-        verbose_name="Product Type"
+        verbose_name=_("Product Type")
     )
     category = models.ForeignKey(
         ProductCategory,
         on_delete=models.CASCADE,
         related_name="products",
-        verbose_name="Category"
+        verbose_name=_("Category")
     )
-    price = models.DecimalField(
-        max_digits=10, decimal_places=2, verbose_name="Price"
-    )
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated At")
+    price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_("Price"))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created At"))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Updated At"))
 
     class Meta:
+        # Уникальность продукта (по имени и типу) проверяется в пределах компании
         constraints = [
             models.UniqueConstraint(
-                fields=['name', 'product_type'],
-                name='unique_product_by_type'
+                fields=['company', 'name', 'product_type'],
+                name='unique_product_by_type_per_company'
             )
         ]
+        verbose_name = _("Product")
+        verbose_name_plural = _("Products")
 
     def __str__(self):
-        return self.name
+        return f"{self.name} (Company: {self.company.name})"
 
 
 class Specification(models.Model):
-    name = models.CharField(max_length=255, unique=True, verbose_name="Specification Name")
-    description = models.TextField(blank=True, null=True, verbose_name="Description")
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated At")
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name="specifications",
+        verbose_name=_("Company")
+    )
+    name = models.CharField(max_length=255, verbose_name=_("Specification Name"))
+    description = models.TextField(blank=True, null=True, verbose_name=_("Description"))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created At"))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Updated At"))
+
+    class Meta:
+        unique_together = ("company", "name")
+        verbose_name = _("Specification")
+        verbose_name_plural = _("Specifications")
 
     def __str__(self):
-        return self.name
+        return f"{self.name} (Company: {self.company.name})"
 
 
 class ProductSpecification(models.Model):
@@ -64,18 +95,23 @@ class ProductSpecification(models.Model):
         Product,
         on_delete=models.CASCADE,
         related_name="product_specifications",
-        verbose_name="Product"
+        verbose_name=_("Product")
     )
     specification = models.ForeignKey(
         Specification,
         on_delete=models.CASCADE,
         related_name="product_specifications",
-        verbose_name="Specification"
+        verbose_name=_("Specification")
     )
-    value = models.CharField(max_length=255, verbose_name="Value")
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated At")
+    value = models.CharField(max_length=255, verbose_name=_("Value"))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created At"))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Updated At"))
+
+    class Meta:
+        # Каждая привязка (пара продукт-спецификация) должна быть уникальна
+        unique_together = ("product", "specification")
+        verbose_name = _("Product Specification")
+        verbose_name_plural = _("Product Specifications")
 
     def __str__(self):
         return f"{self.product.name} - {self.specification.name}: {self.value}"
-

@@ -50,7 +50,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_filters',
     'hr',
-    'companys',
+    # 'companys',
     'hero',
     'admin_restrict',
 ]
@@ -89,7 +89,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 
-    'companys.middleware.TenantMiddleware',  # генерация поддоменов для компаний
+    'hr.middleware.TenantMiddleware',  # генерация поддоменов для компаний
     'hero.middleware.SwitchUrlConfMiddleware',  # Переключатель URLconf для главного домена
     'admin_restrict.middleware.AdminRestrictMiddleware',  # Ограничение доступа к /admin
 ]

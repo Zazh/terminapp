@@ -1,93 +1,118 @@
 # hr/api.py
+from rest_framework import viewsets, status, generics
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from django.urls import reverse
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+from hr.serializers import CompanySerializer, EmployeeInvitationCreateSerializer, InvitationAcceptSerializer
+from hr.models import EmployeeInvitation
+from hr.services import create_company
 
-from rest_framework import viewsets, permissions
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import SearchFilter, OrderingFilter
 
-from .models import (
-    Department,
-    Role,
-    Employee,
-    EmployeeInfo
-)
-from .serializers import (
-    DepartmentSerializer,
-    RoleSerializer,
-    EmployeeSerializer,
-    EmployeeInfoSerializer
-)
+def create(request):
+    serializer = CompanySerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    try:
+        company = create_company(
+            owner=request.user,
+            name=serializer.validated_data['name'],
+            subdomain=serializer.validated_data['subdomain'],
+            billing_plan=serializer.validated_data.get('billing_plan', 'basic')
+        )
+    except Exception as e:
+        return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-class CompanyFilterMixin:
+    output_serializer = CompanySerializer(company)
+    return Response(output_serializer.data, status=status.HTTP_201_CREATED)
+
+
+class CompanyViewSet(viewsets.ViewSet):
+    permission_classes = [IsAuthenticated]
+
+
+class EmployeeInvitationViewSet(viewsets.ModelViewSet):
     """
-    Пример: автоматическая фильтрация по `company`
-    (используя некое поле request.user.current_company).
-    Вы можете адаптировать логику получения текущей компании
-    под свои нужды (сабдомен, параметр, выбранная компания и т.д.)
+    API для создания и просмотра приглашений сотрудников.
+    При создании приглашения автоматически устанавливаются inviter и company.
     """
+    permission_classes = [IsAuthenticated]
+    serializer_class = EmployeeInvitationCreateSerializer
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.link_with_token = None
 
     def get_queryset(self):
-        qs = super().get_queryset()
-        # Если user.is_superuser: вернуть все
-        if self.request.user.is_superuser:
-            return qs
-        # Иначе фильтруем
-        company = getattr(self.request.user, 'current_company', None)
-        if company is not None:
-            return qs.filter(company=company)
-        return qs.none()
+        user = self.request.user
+        # Предполагается, что у пользователя есть связь с компанией через Employee профиль.
+        if hasattr(user, 'employee_profile'):
+            company = user.employee_profile.company
+            return EmployeeInvitation.objects.filter(company=company)
+        return EmployeeInvitation.objects.none()
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        company = user.employee_profile.company
+
+        # Создаём приглашение один раз
+        invitation = serializer.save(inviter=user, company=company)
+
+        accept_url = self.request.build_absolute_uri(reverse('invitation-accept'))
+        link_with_token = f"{accept_url}?token={invitation.token}"
+        self.link_with_token = link_with_token
+
+    def create(self, request, *args, **kwargs):
+        """ Переопределим create, чтобы кроме сериализованных данных вернуть ссылку. """
+        response = super().create(request, *args, **kwargs)
+        # У нас в perform_create сохранена ссылка self.link_with_token
+        if hasattr(self, 'link_with_token'):
+            # Добавляем ссылку в ответ
+            response.data['invitation_link'] = self.link_with_token
+        return response
 
 
-class DepartmentViewSet(CompanyFilterMixin, viewsets.ModelViewSet):
-    queryset = Department.objects.all()
-    serializer_class = DepartmentSerializer
-    permission_classes = [permissions.IsAuthenticated]
+@method_decorator(csrf_exempt, name='dispatch')
+class InvitationAcceptAPIView(generics.CreateAPIView):
+    permission_classes = [AllowAny]
+    serializer_class = InvitationAcceptSerializer
 
-    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ['name', 'code']
-    search_fields = ['name', 'code']
-    ordering_fields = ['name', 'code']
+    @method_decorator(csrf_exempt)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
 
+    def create(self, request, *args, **kwargs):
+        """
+        Переопределяем метод create, чтобы вернуть свой ответ
+        """
+        # Попробуем достать token из query_params, если нет в теле
+        data = dict(request.data)
+        if 'token' not in data and 'token' in request.query_params:
+            data['token'] = request.query_params['token']
 
-class RoleViewSet(CompanyFilterMixin, viewsets.ModelViewSet):
-    queryset = Role.objects.select_related('department').prefetch_related('groups').all()
-    serializer_class = RoleSerializer
-    permission_classes = [permissions.IsAuthenticated]
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
 
-    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ['name', 'department__name']
-    search_fields = ['name', 'department__name']
-    ordering_fields = ['name']
+        return Response(
+            {
+                "detail": "Registration successful!",
+                "email": user.email,
+                "id": user.id
+            },
+            status=status.HTTP_201_CREATED
+        )
 
+    def get_authentication_classes(self):
+        # Полностью отключаем аутентификацию для этого эндпоинта
+        return []
 
-class EmployeeViewSet(CompanyFilterMixin, viewsets.ModelViewSet):
-    # Вместо select_related('role__department') используем prefetch_related('roles__department'),
-    # т.к. roles - это M2M, а department - ForeignKey внутри Role.
-    queryset = Employee.objects.select_related('company', 'user').prefetch_related('roles__department').all()
-    serializer_class = EmployeeSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    # Теперь фильтруем по множественным ролям:
-    # roles__name вместо role__name
-    # roles__department__name вместо role__department__name
-    filterset_fields = ['roles__name', 'roles__department__name', 'status']
-    search_fields = ['user__username', 'user__email', 'roles__name']
-    ordering_fields = ['user__username', 'status']
-
-
-class EmployeeInfoViewSet(CompanyFilterMixin, viewsets.ModelViewSet):
-    """
-    Можно тоже наследовать CompanyFilterMixin,
-    но т.к. вы уже определили свою get_queryset,
-    можно оставить явную фильтрацию через employee__company.
-    Или же совмещаем их.
-    """
-    queryset = EmployeeInfo.objects.select_related('employee__user', 'employee__company')
-    serializer_class = EmployeeInfoSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ['employee__status']
-    search_fields = ['phone', 'employee__user__email']
-    ordering_fields = ['hire_date', 'phone']
-
+    def get_serializer_context(self):
+        """
+        В context можно передать query-параметры, чтобы внутри
+        InvitationAcceptSerializer их забрать
+        """
+        context = super().get_serializer_context()
+        if 'token' in self.request.query_params:
+            context['token'] = self.request.query_params['token']
+        return context

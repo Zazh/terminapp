@@ -15,11 +15,3 @@ class CompanyCreateAPIView(generics.CreateAPIView):
         # Вызываем сервисный слой для создания компании
         company = create_company(self.request.user, serializer.validated_data)
         return company
-
-    def create(self, request, *args, **kwargs):
-        # Передаем request в контекст сериализатора для доступа к request.user
-        serializer = self.get_serializer(data=request.data, context={'request': request})
-        serializer.is_valid(raise_exception=True)
-        company = serializer.save()
-        return Response(CompanySerializer(company).data, status=status.HTTP_201_CREATED)
-

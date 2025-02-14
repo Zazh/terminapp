@@ -1,16 +1,77 @@
 # hr/models.py
-
+import uuid
 from django.db import models
 from django.conf import settings
 from django.contrib.auth.models import Group
-from companys.models import Company  # Импорт из приложения tenant (companys)
+from django.core.exceptions import ValidationError
+from django.utils.translation import gettext_lazy as _
+import re
 
-STATUS_CHOICES = (
+PLAN_CHOICES = (
+    ('TRIAL', 'Trail'),
+    ('BASE', 'Base'),
+)
+
+STATUS_COMPANY_CHOICES = (
+    ('ACTIVE', 'Active'),
+    ('SUSPENDED', 'Suspended'),
+    ('DELETED', 'DELETED'),
+)
+
+STATUS_EMPOLYEE_CHOICES = (
     ('ACTIVE', 'Active'),
     ('FIRED', 'Fired'),
     ('ON_LEAVE', 'On Leave'),
     # Добавляйте при необходимости другие статусы
 )
+
+class Company(models.Model):
+    """
+    Модель, отвечающая за компанию (Tenant).
+    Каждый пользователь может создать только одну компанию, поэтому добавляем поле owner.
+    """
+    name = models.CharField(max_length=255, unique=True)
+    subdomain = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        unique=True,
+        help_text=_("Введите поддомен, состоящий только из маленьких латинских букв, цифр и дефисов.")
+    )
+    billing_plan = models.CharField(
+        max_length=50,
+        default='BASE',
+        choices = PLAN_CHOICES,
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_COMPANY_CHOICES,
+        default='ACTIVE'
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    owner = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="company",
+        verbose_name=_("Owner")
+    )
+
+    def clean(self):
+        """
+        Валидация перед сохранением.
+        Если subdomain указан, убеждаемся, что он состоит только из маленьких букв, цифр и дефисов.
+        """
+        super().clean()
+        if self.subdomain:
+            regex_subdomain = r'^[a-z0-9-]+$'
+            normalized = self.subdomain.lower().strip()
+            if not re.match(regex_subdomain, normalized):
+                raise ValidationError(_("Invalid subdomain format. It must contain only lowercase letters, numbers, and hyphens."))
+            self.subdomain = normalized
+
+    def __str__(self):
+        return self.name
 
 
 class Department(models.Model):
@@ -74,26 +135,19 @@ class Role(models.Model):
 
 
 class Employee(models.Model):
-    """
-    "Сотрудник" (membership), привязывающий пользователя (User)
-    к конкретной компании. Один user может быть сотрудником
-    в нескольких компаниях, и иметь несколько ролей в одной.
-
-    Множественные роли:
-    Используем M2M на модель Role (roles).
-    """
     company = models.ForeignKey(
         Company,
         on_delete=models.CASCADE,
         related_name='employees'
     )
-    # ForeignKey, чтобы один пользователь мог иметь несколько Employee-записей (в разных компаниях)
-    user = models.ForeignKey(
+    # Изменяем на OneToOneField, чтобы один пользователь мог иметь только один Employee,
+    # то есть быть сотрудником только в одной компании.
+    user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='employee_profiles'
+        related_name='employee_profile'  # переименовали в единственное число
     )
-    # Вместо одного role — M2M, чтобы сотрудник мог иметь несколько ролей
+    # Сотруднику по-прежнему можно назначать несколько ролей
     roles = models.ManyToManyField(
         Role,
         related_name='employees',
@@ -101,7 +155,7 @@ class Employee(models.Model):
     )
     status = models.CharField(
         max_length=20,
-        choices=STATUS_CHOICES,
+        choices=STATUS_EMPOLYEE_CHOICES,
         default='ACTIVE'
     )
 
@@ -114,7 +168,6 @@ class Employee(models.Model):
         )
 
     def __str__(self):
-        # В кастомном User может не быть get_full_name(), поэтому fallback на username/email
         username_display = getattr(self.user, 'username', None) or getattr(self.user, 'email', '')
         return f"{username_display} @ {self.company.name} ({self.get_status_display()})"
 
@@ -142,3 +195,36 @@ class EmployeeInfo(models.Model):
 
     def __str__(self):
         return f"Info for {self.employee}"
+
+
+INVITATION_STATUS = (
+    ('PENDING', 'Pending'),
+    ('ACCEPTED', 'Accepted'),
+    ('EXPIRED', 'Expired'),
+)
+
+class EmployeeInvitation(models.Model):
+    inviter = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='sent_invitations'
+    )
+    company = models.ForeignKey(
+        'Company',
+        on_delete=models.CASCADE,
+        related_name='invitations'
+    )
+    email = models.EmailField()
+    token = models.CharField(max_length=64, unique=True, editable=False)
+    status = models.CharField(max_length=10, choices=INVITATION_STATUS, default='PENDING')
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+
+    def save(self, *args, **kwargs):
+        if not self.token:
+            # Генерируем уникальный токен (например, с помощью uuid)
+            self.token = uuid.uuid4().hex
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Invitation for {self.email} to {self.company.name}"

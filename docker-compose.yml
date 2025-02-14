@@ -56,6 +56,14 @@ services:
       - "traefik.http.services.apiService.loadbalancer.server.port=8001"
       - "traefik.http.services.apiService.loadbalancer.server.scheme=http"
 
+      # Роутер для мультиарендного фронтенда по субдоменам
+      - "traefik.http.routers.tenant.rule=HostRegexp(`{subdomain:[a-z0-9-]+}.${DOMAIN}`)"
+      - "traefik.http.routers.tenant.entrypoints=web"
+      - "traefik.http.routers.tenant.service=apiService"
+      - "traefik.http.services.apiService.loadbalancer.server.port=8001"
+      - "traefik.http.services.apiService.loadbalancer.server.scheme=http"
+
+
   db:
     image: postgres:15
     env_file:
