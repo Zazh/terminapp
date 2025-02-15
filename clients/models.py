@@ -1,4 +1,5 @@
 from django.db import models
+from hr.models import Company
 
 class Client(models.Model):
     first_name = models.CharField(max_length=255, verbose_name="Имя клиента")
@@ -13,10 +14,10 @@ class Client(models.Model):
         null=True,
         verbose_name="Резервный телефон"
     )
-    company = models.CharField(
-        max_length=255,
-        blank=True,
-        null=True,
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name="clients",
         verbose_name="Компания"
     )
     email = models.EmailField(
