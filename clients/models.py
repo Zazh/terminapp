@@ -4,9 +4,8 @@ class Client(models.Model):
     first_name = models.CharField(max_length=255, verbose_name="Имя клиента")
     primary_phone = models.CharField(
         max_length=15,
-        unique=True,
         verbose_name="Основной телефон клиента",
-        help_text="Введите телефон в формате +79991234567"
+        help_text="Введите телефон в формате +75551234567"
     )
     backup_phone = models.CharField(
         max_length=15,
@@ -27,6 +26,12 @@ class Client(models.Model):
     )
 
     class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['company', 'primary_phone'],
+                name='unique_phone_within_company'
+            )
+        ]
         verbose_name = "Клиент"
         verbose_name_plural = "Клиенты"
 
