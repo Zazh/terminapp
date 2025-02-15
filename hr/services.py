@@ -1,7 +1,8 @@
 # hr/services.py
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import Group
-from hr.models import Company, Department, Role, Employee
+from hr.models import Company, Department, Role, Employee, EmployeeInfo
+
 
 def create_company(owner, name, subdomain, billing_plan='BASE'):
     """
@@ -51,8 +52,14 @@ def create_company(owner, name, subdomain, billing_plan='BASE'):
         user=owner,
         status='ACTIVE'
     )
-    # Назначаем владельцу роль "Администратор"
+    # 5. Назначаем владельцу роль "Администратор"
     employee.roles.add(admin_role)
+
+    # 6. Создаем EmployeeInfo и связываем его с созданным Employee
+    EmployeeInfo.objects.create(
+        employee=employee,
+        hire_date=employee.created_at.date()  # если хотите только дату
+    )
 
     return company
 

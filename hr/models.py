@@ -158,6 +158,7 @@ class Employee(models.Model):
         choices=STATUS_EMPOLYEE_CHOICES,
         default='ACTIVE'
     )
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         verbose_name = 'Employee'
