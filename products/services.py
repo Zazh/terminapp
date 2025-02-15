@@ -19,6 +19,10 @@ class ProductService:
         if not category:
             raise ValidationError("Category does not exist or does not belong to this company.")
 
+        # -- Проверка уникальности в пределах (company, category, name) --
+        if Product.objects.filter(company=company, category=category, name=name).exists():
+            raise ValidationError("A product with this name already exists in the specified category.")
+
         product = Product.objects.create(
             company=company,
             name=name,

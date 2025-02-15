@@ -29,8 +29,9 @@ urlpatterns = [
     # API-эндпоинты (например, под /api/...)
     path('api/account/', include('account.urls')),
     path('api/clients/', include('clients.urls')),
-    path('api/products/', include('products.urls')),
     path('api/hr/', include('hr.urls')),
+
+    path('api/products/', include('products.urls')),
     path('api/cashflow/', include('cashflow.urls')),
     path('api/analytics/', include('analytics.urls')),
 

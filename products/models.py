@@ -58,8 +58,8 @@ class Product(models.Model):
         # Уникальность продукта (по имени и типу) проверяется в пределах компании
         constraints = [
             models.UniqueConstraint(
-                fields=['company', 'name', 'product_type'],
-                name='unique_product_by_type_per_company'
+                fields=['company', 'category', 'name'],
+                name='unique_product_name_in_category_per_company'
             )
         ]
         verbose_name = _("Product")

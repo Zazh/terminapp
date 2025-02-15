@@ -29,8 +29,9 @@ class TenantModelViewSet(viewsets.ModelViewSet):
         # Получаем значение, установленное мидлваром (например, по субдомену)
         middleware_company = getattr(self.request, 'current_company', None)
         # Получаем компанию, связанную с аутентифицированным пользователем
-        user_company = getattr(self.request.user, 'company', None)
-        print(f"DEBUG: middleware_company = {middleware_company}, user_company = {user_company}")
+        user_employee = getattr(self.request.user, 'employee', None)
+        user_company = user_employee.company if user_employee else None
+
         # Если определён мидлварный вариант, то проверяем соответствие с компанией пользователя
         if middleware_company and user_company:
             if middleware_company != user_company:
@@ -39,7 +40,7 @@ class TenantModelViewSet(viewsets.ModelViewSet):
             return middleware_company
 
         # Если мидлвар не определил компанию, возвращаем компанию пользователя (если она есть)
-        return user_company
+        return middleware_company or user_company
 
     def get_queryset(self):
         qs = super().get_queryset()
