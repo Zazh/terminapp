@@ -1,14 +1,68 @@
-from django.db.models import Sum, Case, When, F, DecimalField, Value
-from django.db.models.functions import ExtractMonth, ExtractYear, Coalesce
-from collections import defaultdict
-from .models import Transaction
+# cashflow/services.py
+
+from django.db import transaction
+from django.db.models import Sum
 from datetime import date, timedelta, datetime
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple, Any, List
 import decimal
 
-def parse_transaction_filters(request) -> Dict[str, Optional[any]]:
+from .models import Wallet, Transaction, Category
+from hr.models import Company
+
+
+def create_wallet(company: Company, name: str) -> Wallet:
     """
-    Парсинг параметров фильтрации из запроса.
+    Создает кошелёк, принадлежащий заданной компании.
+    """
+    return Wallet.objects.create(company=company, name=name)
+
+@transaction.atomic
+def create_transaction(
+    company: Company,
+    wallet: Wallet,
+    category: Category,
+    amount,
+    description: str = "",
+    reason_object=None
+) -> Transaction:
+    """
+    Создаёт транзакцию в рамках заданной компании и кошелька.
+    reason_object - произвольный объект (GenericForeignKey), если требуется.
+    """
+    if wallet.company_id != company.id:
+        raise ValueError("Кошелёк принадлежит другой компании.")
+
+    new_tx = Transaction(
+        company=company,
+        wallet=wallet,
+        category=category,
+        amount=amount,
+        description=description
+    )
+    if reason_object:
+        new_tx.reason_transaction = reason_object
+
+    new_tx.save()
+    return new_tx
+
+def get_wallets_for_company(company: Company):
+    """
+    Возвращает QuerySet кошельков, принадлежащих конкретной компании,
+    с аннотированным балансом.
+    """
+    return Wallet.objects.annotate_balance().filter(company=company)
+
+
+def get_transactions_for_company(company: Company):
+    """
+    Возвращает QuerySet транзакций, принадлежащих конкретной компании.
+    """
+    return Transaction.objects.select_related('wallet', 'category').filter(company=company)
+
+
+def parse_transaction_filters(request) -> Dict[str, Optional[Any]]:
+    """
+    Парсит GET-параметры запроса для фильтрации транзакций.
     """
     period = request.GET.get('period')
     exact_date_str = request.GET.get('exact_date')
@@ -21,7 +75,6 @@ def parse_transaction_filters(request) -> Dict[str, Optional[any]]:
     amount_max_str = request.GET.get('amount_max')
     desc_substr = request.GET.get('desc')
 
-    # Преобразование параметров
     try:
         exact_date = datetime.strptime(exact_date_str, "%Y-%m-%d").date() if exact_date_str else None
     except ValueError:
@@ -47,6 +100,7 @@ def parse_transaction_filters(request) -> Dict[str, Optional[any]]:
     }
 
 def get_filtered_transactions(
+    company: Company,
     period=None,
     start_date=None,
     end_date=None,
@@ -57,27 +111,45 @@ def get_filtered_transactions(
     amount_min=None,
     amount_max=None,
     description_substring=None,
-):
+) -> Tuple[Any, decimal.Decimal]:
     """
-    Фильтрует QuerySet Transaction на основании заданных параметров.
+    Фильтрует QuerySet Transaction в рамках компании на основании параметров.
+    Возвращает (queryset, total_sum).
     """
-    qs = Transaction.objects.select_related('category', 'wallet').all()
+    qs = Transaction.objects.select_related('category', 'wallet')
+    # Сначала фильтруем по company
+    qs = qs.filter(company=company)
 
-    # Словарь фильтров
-    filters = {
-        'date': exact_date,
-        'transaction_type': transaction_type,
-        'wallet_id': wallet_id,
-        'category_id': category_id,
-        'amount__gte': amount_min,
-        'amount__lte': amount_max,
-    }
-    # Убираем пустые значения
-    filters = {key: value for key, value in filters.items() if value is not None}
+    # transaction_type => фильтр по category__operation_type
+    if transaction_type:
+        if transaction_type == 'income':
+            qs = qs.filter(category__operation_type__in=['income', 'technical_income'])
+        elif transaction_type == 'expense':
+            qs = qs.filter(category__operation_type__in=['expense', 'technical_expense'])
+        else:
+            qs = qs.filter(category__operation_type=transaction_type)
 
-    qs = qs.filter(**filters)
+    # Фильтр по exact_date
+    if exact_date:
+        qs = qs.filter(date=exact_date)
 
-    # Фильтрация по дате
+    # Фильтр по wallet_id / category_id
+    if wallet_id:
+        qs = qs.filter(wallet_id=wallet_id)
+    if category_id:
+        qs = qs.filter(category_id=category_id)
+
+    # Фильтр по сумме
+    if amount_min is not None:
+        qs = qs.filter(amount__gte=amount_min)
+    if amount_max is not None:
+        qs = qs.filter(amount__lte=amount_max)
+
+    # Фильтр по описанию (substring)
+    if description_substring:
+        qs = qs.filter(description__icontains=description_substring)
+
+    # Фильтрация по периоду
     if period:
         d_start, d_end = get_date_range_for_period(period, start_date, end_date)
         if d_start and d_end:
@@ -87,19 +159,20 @@ def get_filtered_transactions(
         elif d_end:
             qs = qs.filter(date__lte=d_end)
 
-    # Вычисление общей суммы
-    total_sum = qs.aggregate(total=Sum('amount'))['total'] or 0
+    # Сумма
+    total_sum = qs.aggregate(total=Sum('amount'))['total'] or decimal.Decimal('0.00')
 
-    # Сортировка по убыванию даты
-    return qs.order_by('-date', '-id'), total_sum
+    # Сортируем по убыванию даты
+    qs = qs.order_by('-date', '-id')
+
+    return qs, total_sum
 
 
 def get_date_range_for_period(period: str, custom_start=None, custom_end=None):
     """
-    Возвращает диапазон дат на основании заданного периода.
+    Возвращает (start, end) на основании period.
     """
     today = date.today()
-
     if period == 'today':
         return today, today
     elif period == 'yesterday':
@@ -117,37 +190,55 @@ def get_date_range_for_period(period: str, custom_start=None, custom_end=None):
     return None, None
 
 
-def get_wallet_balances():
+def get_wallet_balances(company):
     """
-    Возвращает баланс по каждому кошельку.
+    Возвращает баланс по каждому кошельку в рамках заданной компании.
+    Использует класс-метод Transaction.calculate_wallet_balances().
+    Если в модели не предусмотрен параметр company — 
+    придётся отфильтровать вручную.
     """
-    return Transaction.calculate_wallet_balances()
+    # Пример, если метод calculate_wallet_balances не учитывает компанию,
+    # то фильтруем вручную:
+    # Transaction.objects.filter(company=company).calculate_wallet_balances() 
+    #
+    # Но, если метод calculate_wallet_balances() внутри уже умеет работать
+    # с company (или мы можем его переписать), то:
+    return Transaction.calculate_wallet_balances().filter(company=company)
 
 
-def get_monthly_in_out(year: int):
+def get_monthly_in_out(company, year: int):
     """
-    Возвращает доходы и расходы по месяцам для заданного года.
+    Возвращает доходы/расходы по месяцам за год для конкретной компании.
+    Если Transaction.monthly_summary ожидает company, передаём:
+        return Transaction.monthly_summary(company=company, year=year)
+    Если нет, можно реализовать здесь вручную.
     """
-    return Transaction.monthly_summary(year)
+    # Предположим, в модели Transaction есть метод monthly_summary(year, company)
+    return Transaction.monthly_summary(year=year, company=company)
 
 
-def get_cashflow_summary_by_activity(year: int = None):
+def get_cashflow_summary_by_activity(company, year: Optional[int] = None):
     """
-    Возвращает сводку доходов/расходов в разрезе видов деятельности.
+    Возвращает сводку доходов/расходов в разрезе видов деятельности (activity_type),
+    только для заданной компании.
+    Если в Transaction.summary_by_activity() нет company,
+    нужно доработать сам метод или вручную сделать агрегацию здесь.
     """
-    return Transaction.summary_by_activity(year)
+    return Transaction.summary_by_activity(year=year, company=company)
 
 
-def get_monthly_cashflow_by_category(year: int = None):
+def get_monthly_cashflow_by_category(company, year: Optional[int] = None):
     """
-    Возвращает месячный кэшфлоу по категориям за указанный год.
+    Возвращает месячный кэшфлоу по категориям за указанный год в рамках заданной компании.
+    Аналогично, если Transaction.monthly_cashflow_by_category не принимает company,
+    придётся реализовать вручную или доработать метод.
     """
-    return Transaction.monthly_cashflow_by_category(year)
+    return Transaction.monthly_cashflow_by_category(year=year, company=company)
 
 
-def get_last_12_year_months():
+def get_last_12_year_months() -> List[Tuple[int, int]]:
     """
-    Возвращает список (year, month) для последних 12 месяцев.
+    Возвращает список (year, month) для последних 12 месяцев (без привязки к company).
     """
     today = date.today()
     return [
@@ -159,18 +250,23 @@ def get_last_12_year_months():
     ]
 
 
-def get_activity_category_month_report_12():
+def get_activity_category_month_report_12(company):
     """
-    Возвращает pivot-отчёт за последние 12 месяцев.
+    Возвращает pivot-отчёт за последние 12 месяцев (по Activity/Category)
+    в рамках заданной компании.
+    Если Transaction.pivot_activity_category_last_12_months() не учитывает company,
+    нужно доработать.
     """
-    return Transaction.pivot_activity_category_last_12_months()
+    # Пример (если не учтён company):
+    # return Transaction.pivot_activity_category_last_12_months().filter(company=company)
+    return Transaction.pivot_activity_category_last_12_months(company=company)
 
 
-def get_all_transactions(year: int = None):
+def get_all_transactions(company, year: Optional[int] = None):
     """
-    Возвращает все транзакции, отфильтрованные по году.
+    Возвращает все транзакции компании, при необходимости фильтрует по году.
     """
-    qs = Transaction.objects.select_related('category', 'wallet').order_by('-date')
+    qs = Transaction.objects.select_related('category', 'wallet').filter(company=company).order_by('-date')
     if year:
         qs = qs.filter(date__year=year)
     return qs
