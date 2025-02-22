@@ -18,13 +18,6 @@ STATUS_COMPANY_CHOICES = (
     ('DELETED', 'DELETED'),
 )
 
-STATUS_EMPOLYEE_CHOICES = (
-    ('ACTIVE', 'Active'),
-    ('FIRED', 'Fired'),
-    ('ON_LEAVE', 'On Leave'),
-    # Добавляйте при необходимости другие статусы
-)
-
 class Company(models.Model):
     """
     Модель, отвечающая за компанию (Tenant).
@@ -133,6 +126,12 @@ class Role(models.Model):
         dep_info = f" / {self.department.name}" if self.department else ""
         return f"{self.name} ({self.company.name}{dep_info})"
 
+
+STATUS_EMPOLYEE_CHOICES = (
+    ('ACTIVE', 'Active'),
+    ('FIRED', 'Fired'),
+    ('ON_LEAVE', 'On Leave'),
+)
 
 class Employee(models.Model):
     company = models.ForeignKey(

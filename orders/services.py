@@ -1,11 +1,9 @@
 from decimal import Decimal
 from .models import Order, OrderItem
 from django.db import transaction
-from products.models import Product
+from products.models import Product, PriceList  # Импорт обновлённой модели продукта
 from cashflow.models import Wallet
-from django.db.models import Sum, F, DecimalField
 from django.core.exceptions import ValidationError
-
 
 
 def calculate_order_total(order):
@@ -13,9 +11,11 @@ def calculate_order_total(order):
     Рассчитывает общую сумму заказа.
     """
     total = Decimal('0.00')
-    for item in order.items.all():
+    # Используем order.order_items вместо order.items
+    for item in order.order_items.all():
         total += item.calculate_amount()
     return total
+
 
 def recalc_order_total(order: Order) -> None:
     """
@@ -26,11 +26,12 @@ def recalc_order_total(order: Order) -> None:
     order.total_amount = total
     order.save(update_fields=['total_amount'])
 
+
 def update_order_status(order):
     """
     Обновляет статус заказа.
     """
-    items = order.items.all()
+    items = order.order_items.all()
     if items.filter(status='pending').exists():
         return 'pending'
     elif items.filter(status='completed').count() == items.count():
@@ -60,7 +61,7 @@ class OrderItemService:
             status: str = 'pending'
     ) -> OrderItem:
         """
-        Создать OrderItem. Если price не передана, берём из Product.
+        Создать OrderItem. Если цена не передана, берём её из Product
         """
         try:
             order = Order.objects.get(pk=order_id)
@@ -72,8 +73,13 @@ class OrderItemService:
         except Product.DoesNotExist:
             raise ValidationError(f"Product с id={product_id} не найден.")
 
-        if price is None:  # не передали цену — берём из продукта
-            price = product.price
+        # Если цена не передана, берем актуальную цену из Product
+        if price is None:
+            price_list = product.price_list.order_by('-created_at').first()  # Получаем последнюю актуальную цену
+            if price_list:
+                price = price_list.price  # Берем значение цены
+            else:
+                price = 0  # Значение по умолчанию, если нет цен
 
         wallet = None
         if wallet_id:
@@ -88,7 +94,7 @@ class OrderItemService:
             quantity=quantity,
             price=price,
             discount=discount,
-            # wallet=wallet,
+            # При необходимости можно передавать wallet=wallet
             status=status
         )
         return order_item
@@ -98,14 +104,14 @@ class OrderItemService:
     def update_order_item(order_item_id: int, **kwargs) -> OrderItem:
         """
         Обновить уже существующий OrderItem.
-        Если в kwargs нет price, не трогаем её.
+        Если в kwargs нет поля price, то его не изменяем.
         """
         try:
             order_item = OrderItem.objects.get(pk=order_item_id)
         except OrderItem.DoesNotExist:
             raise ValidationError(f"OrderItem с id={order_item_id} не найден.")
 
-        # Меняем поля, которые пришли в kwargs
+        # Обновляем поля, переданные в kwargs
         for field, value in kwargs.items():
             if hasattr(order_item, field):
                 setattr(order_item, field, value)

@@ -50,7 +50,6 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_filters',
     'hr',
-    # 'companys',
     'hero',
     'admin_restrict',
 ]

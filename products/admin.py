@@ -1,38 +1,89 @@
 from django.contrib import admin
-from .models import ProductCategory, Product, Specification, ProductSpecification
+from .models import (
+    BusinessDirection,
+    ProductCategory,
+    Product,
+    ProductInfo,
+    Attribute,
+    ProductAttributeValue,
+    PriceList,
+)
+
+@admin.register(BusinessDirection)
+class BusinessDirectionAdmin(admin.ModelAdmin):
+    list_display = ('name', 'description')
+    search_fields = ('name',)
+
 
 @admin.register(ProductCategory)
 class ProductCategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'company', 'description', 'created_at', 'updated_at')
-    search_fields = ('name', 'company__name')
-    list_filter = ('company', 'created_at')
+    list_display = ('name', 'company', 'business_direction', 'created_at')
+    search_fields = ('name',)
+    list_filter = ('company', 'business_direction')
 
 
-class ProductSpecificationInline(admin.TabularInline):
-    model = ProductSpecification
-    extra = 1
-    autocomplete_fields = ('specification',)
+class ProductInfoInline(admin.StackedInline):
+    model = ProductInfo
+    extra = 0
+
+
+class ProductAttributeValueInline(admin.TabularInline):
+    model = ProductAttributeValue
+    extra = 0
+
+
+class PriceListInline(admin.TabularInline):
+    model = PriceList
+    fk_name = 'product'  # Явно указываем имя FK
+    extra = 0
+
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('name', 'company', 'product_type', 'category', 'price', 'created_at', 'updated_at')
-    search_fields = ('name', 'description', 'company__name')
-    list_filter = ('company', 'product_type', 'category', 'created_at')
-    autocomplete_fields = ('category',)
-    ordering = ('-created_at',)
-    inlines = [ProductSpecificationInline]
+    list_display = (
+        'name',
+        'sku',
+        'company',
+        'category',
+        'product_type',
+        'created_at'
+    )
+    search_fields = ('name', 'sku')
+    list_filter = ('company', 'category', 'product_type')
+    inlines = [ProductInfoInline, ProductAttributeValueInline, PriceListInline]
 
 
-@admin.register(Specification)
-class SpecificationAdmin(admin.ModelAdmin):
-    list_display = ('name', 'company', 'description', 'created_at', 'updated_at')
-    search_fields = ('name', 'company__name')
-    list_filter = ('company', 'created_at')
+@admin.register(ProductInfo)
+class ProductInfoAdmin(admin.ModelAdmin):
+    list_display = ('product', 'created_at')
+    search_fields = ('product__name', 'product__sku')
 
 
-@admin.register(ProductSpecification)
-class ProductSpecificationAdmin(admin.ModelAdmin):
-    list_display = ('product', 'specification', 'value', 'created_at', 'updated_at')
-    search_fields = ('product__name', 'specification__name', 'value')
-    list_filter = ('product', 'specification', 'created_at')
-    autocomplete_fields = ('product', 'specification')
+@admin.register(Attribute)
+class AttributeAdmin(admin.ModelAdmin):
+    list_display = ('name', 'company')
+    search_fields = ('name',)
+    list_filter = ('company',)
+
+
+@admin.register(ProductAttributeValue)
+class ProductAttributeValueAdmin(admin.ModelAdmin):
+    list_display = ('product', 'attribute', 'value', 'created_at')
+    search_fields = (
+        'product__name',
+        'attribute__name',
+        'value',
+    )
+
+
+@admin.register(PriceList)
+class PriceListAdmin(admin.ModelAdmin):
+    # Если прямой доступ к полю product вызывает ошибку,
+    # определим метод, который возвращает нужное значение.
+    list_display = ('product_name', 'price', 'currency',)
+    search_fields = ('product__name',)
+    list_filter = ('currency',)
+
+    def product_name(self, obj):
+        return obj.product.name
+    product_name.short_description = "Product"
