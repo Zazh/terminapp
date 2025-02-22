@@ -55,8 +55,8 @@ class ProductAdmin(admin.ModelAdmin):
 
 @admin.register(ProductInfo)
 class ProductInfoAdmin(admin.ModelAdmin):
-    list_display = ('product', 'created_at')
-    search_fields = ('product__name', 'product__sku')
+    list_display = ('product', 'created_at', 'company')
+    search_fields = ('product__name', 'product__sku', 'company')
 
 
 @admin.register(Attribute)
@@ -68,11 +68,12 @@ class AttributeAdmin(admin.ModelAdmin):
 
 @admin.register(ProductAttributeValue)
 class ProductAttributeValueAdmin(admin.ModelAdmin):
-    list_display = ('product', 'attribute', 'value', 'created_at')
+    list_display = ('product', 'attribute', 'value', 'created_at', 'company')
     search_fields = (
         'product__name',
         'attribute__name',
         'value',
+        'company',
     )
 
 
@@ -80,8 +81,8 @@ class ProductAttributeValueAdmin(admin.ModelAdmin):
 class PriceListAdmin(admin.ModelAdmin):
     # Если прямой доступ к полю product вызывает ошибку,
     # определим метод, который возвращает нужное значение.
-    list_display = ('product_name', 'price', 'currency',)
-    search_fields = ('product__name',)
+    list_display = ('product_name', 'price', 'currency','company')
+    search_fields = ('product__name', 'company')
     list_filter = ('currency',)
 
     def product_name(self, obj):

@@ -45,7 +45,7 @@ class ProductCategory(models.Model):
 
 class Product(models.Model):
     PRODUCT_TYPE_CHOICES = [
-        ('rental', _('Rental')),
+        ('service', _('Service')),
         ('product', _('Product')),
     ]
     company = models.ForeignKey(
@@ -61,6 +61,7 @@ class Product(models.Model):
         verbose_name=_("Category")
     )
     name = models.CharField(max_length=255, verbose_name=_("Name"))
+    is_bookable = models.BooleanField(default=False, verbose_name=_("Is Bookable"))
     product_type = models.CharField(
         max_length=10,
         choices=PRODUCT_TYPE_CHOICES,
@@ -94,6 +95,12 @@ class ProductInfo(models.Model):
     """
     Модель для хранения медиафайлов и дополнительной информации о продукте.
     """
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name="product_info",
+        verbose_name=_("Company")
+    )
     product = models.OneToOneField(
         Product,
         on_delete=models.CASCADE,
@@ -142,6 +149,12 @@ class ProductAttributeValue(models.Model):
     """
     Хранит значения характеристик, привязанных к конкретному шаблону продукта.
     """
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name="product_attributes_value",
+        verbose_name=_("Company")
+    )
     product = models.ForeignKey(
         Product,
         on_delete=models.CASCADE,
@@ -173,6 +186,12 @@ class PriceList(models.Model):
         ('KZT', _('Тенге')),
         ('USD', _('$')),
     ]
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name="price_list",
+        verbose_name=_("Company")
+    )
     product = models.ForeignKey(
         Product,
         on_delete=models.CASCADE,
