@@ -2,7 +2,7 @@ from django.db import models
 from django.core.exceptions import ValidationError
 from decimal import Decimal
 from cashflow.models import Wallet, Transaction, Category
-from products.models import Product  # Импортируем новую модель
+from products.models import Product
 from clients.models import Client
 from django.contrib.contenttypes.models import ContentType
 import datetime
@@ -13,7 +13,6 @@ class Order(models.Model):
         ('completed', 'Завершён'),
         ('cancelled', 'Отменён'),
     ]
-
     client = models.ForeignKey(
         Client,
         on_delete=models.SET_NULL,
@@ -96,15 +95,19 @@ class OrderItem(models.Model):
 
     def clean(self):
         super().clean()
-        # Если цена не указана, берем актуальную цену из Product
-        if not self.price and self.product:
-            # Метод get_current_price() должен быть реализован в модели Product
+
+        # Устанавливаем цену, если её нет
+        if self.price is None and self.product:
             self.price = self.product.get_current_price()
 
-        if self.discount < 0:
+        # Если цена все равно None, устанавливаем 0
+        price = self.price if self.price is not None else Decimal("0.00")
+        discount = self.discount if self.discount is not None else Decimal("0.00")
+
+        if discount < 0:
             raise ValidationError("Скидка не может быть отрицательной.")
 
-        if self.discount > self.price:
+        if discount > price:
             raise ValidationError("Скидка не может превышать цену.")
 
         if self.status == 'paid' and not self.wallet:
@@ -130,6 +133,7 @@ class OrderItem(models.Model):
             content_type=content_type,
             object_id=self.pk,
             defaults={
+                'company': self.wallet.company,
                 'category': sales_category,
                 'wallet': self.wallet,
                 'amount': self.calculate_amount(),
@@ -200,6 +204,7 @@ class OrderItemRefund(models.Model):
             content_type=content_type,
             object_id=self.pk,
             defaults={
+                'company': self.wallet.company,
                 'category': refund_category,
                 'wallet': self.wallet,
                 'amount': self.refund_amount,

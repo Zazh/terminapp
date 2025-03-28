@@ -7,8 +7,6 @@ WORKDIR /app
 # Копируем файл зависимостей
 COPY requirements.txt .
 
-# Устанавливаем системные зависимости и утилиты
-
 
 # Устанавливаем зависимости Python
 RUN pip install --no-cache-dir -r requirements.txt

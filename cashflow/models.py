@@ -41,7 +41,6 @@ class Wallet(models.Model):
         verbose_name="Компания"
     )
     name = models.CharField("Название кошелька", max_length=255)
-    # убрали unique=True, чтобы в разных компаниях могли повторяться названия
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата обновления")
 

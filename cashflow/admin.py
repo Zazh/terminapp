@@ -5,7 +5,7 @@ from .models import Wallet, Category, Transaction, ActivityType
 
 @admin.register(Wallet)
 class WalletAdmin(admin.ModelAdmin):
-    list_display = ('name', 'created_at', 'updated_at')
+    list_display = ('name', 'company', 'created_at', 'updated_at' )
 
 @admin.register(ActivityType)
 class ActivityTypeAdmin(admin.ModelAdmin):
@@ -19,9 +19,9 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Transaction)
 class TransactionAdmin(admin.ModelAdmin):
-    list_display = ('transaction_type_display', 'amount', 'category', 'wallet', 'date')
-    list_filter = ('category', 'wallet', 'date')
-    search_fields = ('description',)
+    list_display = ('transaction_type_display', 'company', 'amount', 'category', 'wallet', 'date')
+    list_filter = ('category', 'company', 'wallet', 'date')
+    search_fields = ('description', 'company')
 
     def transaction_type_display(self, obj):
         """

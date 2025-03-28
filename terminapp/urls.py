@@ -24,12 +24,11 @@ urlpatterns = [
     # главная страница domain.com - использует hero app middlewere
     path('', include('hero.urls')),
 
-    path('orders/', include('orders.urls', namespace='orders')),
-
     # API-эндпоинты (например, под /api/...)
     path('api/account/', include('account.urls')),
     path('api/clients/', include('clients.urls')),
     path('api/hr/', include('hr.urls')),
+    path('api/orders/', include('orders.urls')),
 
     path('api/products/', include('products.urls')),
     path('api/cashflow/', include('cashflow.urls')),

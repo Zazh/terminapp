@@ -68,7 +68,7 @@ class Product(models.Model):
         default='product',
         verbose_name=_("Product Type")
     )
-    sku = models.CharField(max_length=100, unique=True, verbose_name=_("SKU"))
+    sku = models.CharField(max_length=12, verbose_name=_("SKU"))
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created At"))
     updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Updated At"))
 
@@ -198,7 +198,7 @@ class PriceList(models.Model):
         related_name='price_list',
         verbose_name=_("Product")
     )
-    price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_("Price"))
+    price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_("Price"), default=0)
     currency = models.CharField(
         max_length=10,
         choices=CURRENCY_TYPE_CHOICES,
