@@ -49,9 +49,8 @@ class LoginSerializer(serializers.Serializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    """
-    Для вывода инфо о текущем пользователе.
-    """
+    company_name = serializers.CharField(source='company.name', read_only=True)
+
     class Meta:
         model = User
-        fields = ['id', 'email', 'is_staff', 'is_active', 'date_joined']
+        fields = ['id', 'email', 'is_staff', 'is_active', 'date_joined', 'company_name',]

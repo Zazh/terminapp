@@ -14,6 +14,8 @@ class UserManager(BaseUserManager):
         if not email:
             raise ValueError(_("Users must have an email address"))
 
+        extra_fields.pop('is_staff', None)
+        extra_fields.pop('is_superuser', None)
         email = self.normalize_email(email)
 
         # Проверка длины email
@@ -22,7 +24,7 @@ class UserManager(BaseUserManager):
 
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
-        user.full_clean()  # Вызывает clean() перед сохранением
+        user.full_clean()
         user.save(using=self._db)
         return user
 
