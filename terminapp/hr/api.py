@@ -36,11 +36,9 @@ class EmployeeInvitationViewSet(viewsets.ModelViewSet):
     """
     permission_classes = [IsAuthenticated]
     serializer_class = EmployeeInvitationCreateSerializer
-    link_with_token = None  # атрибут класса
 
     def get_queryset(self):
         user = self.request.user
-        # Предполагается, что у пользователя есть связь с компанией через Employee профиль.
         if hasattr(user, 'employee_profile'):
             company = user.employee_profile.company
             return EmployeeInvitation.objects.filter(company=company)
@@ -49,22 +47,8 @@ class EmployeeInvitationViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         user = self.request.user
         company = user.employee_profile.company
-
-        # Создаём приглашение один раз
-        invitation = serializer.save(inviter=user, company=company)
-
-        accept_url = self.request.build_absolute_uri(reverse('invitation-accept'))
-        link_with_token = f"{accept_url}?token={invitation.token}"
-        self.link_with_token = link_with_token
-
-    def create(self, request, *args, **kwargs):
-        """ Переопределим create, чтобы кроме сериализованных данных вернуть ссылку. """
-        response = super().create(request, *args, **kwargs)
-        # У нас в perform_create сохранена ссылка self.link_with_token
-        if hasattr(self, 'link_with_token'):
-            # Добавляем ссылку в ответ
-            response.data['invitation_link'] = self.link_with_token
-        return response
+        # Сохраняем приглашение, связывая его с текущим пользователем и компанией
+        serializer.save(inviter=user, company=company)
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -77,11 +61,7 @@ class InvitationAcceptAPIView(generics.CreateAPIView):
         return super().dispatch(*args, **kwargs)
 
     def create(self, request, *args, **kwargs):
-        """
-        Переопределяем метод create, чтобы вернуть свой ответ
-        """
-        # Попробуем достать token из query_params, если нет в теле
-        data = dict(request.data)
+        data = request.data.dict()
         if 'token' not in data and 'token' in request.query_params:
             data['token'] = request.query_params['token']
 
@@ -99,14 +79,9 @@ class InvitationAcceptAPIView(generics.CreateAPIView):
         )
 
     def get_authentication_classes(self):
-        # Полностью отключаем аутентификацию для этого эндпоинта
         return []
 
     def get_serializer_context(self):
-        """
-        В context можно передать query-параметры, чтобы внутри
-        InvitationAcceptSerializer их забрать
-        """
         context = super().get_serializer_context()
         if 'token' in self.request.query_params:
             context['token'] = self.request.query_params['token']
