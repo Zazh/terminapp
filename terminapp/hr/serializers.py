@@ -12,7 +12,6 @@ class CompanySerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'subdomain', 'billing_plan', 'created_at')
         read_only_fields = ('id', 'created_at')
 
-
 class EmployeeInvitationCreateSerializer(serializers.ModelSerializer):
     # Вычисляемое поле для формирования ссылки приглашения
     invitation_link = serializers.SerializerMethodField()
