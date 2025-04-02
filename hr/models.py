@@ -7,6 +7,8 @@ from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 import re
 
+from rest_framework.exceptions import PermissionDenied
+
 PLAN_CHOICES = (
     ('TRIAL', 'Trail'),
     ('BASE', 'Base'),
@@ -65,6 +67,16 @@ class Company(models.Model):
 
     def __str__(self):
         return self.name
+
+class CompanyMixin:
+    def get_queryset(self):
+        return self.queryset.filter(company=self.request.user.company)
+
+    def get_object(self):
+        obj = super().get_object()
+        if obj.company != self.request.user.company:
+            raise PermissionDenied("У вас нет доступа к этому объекту.")
+        return obj
 
 
 class Department(models.Model):

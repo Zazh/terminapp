@@ -5,6 +5,7 @@ from cashflow.models import Wallet, Transaction, Category
 from products.models import Product
 from clients.models import Client
 from django.contrib.contenttypes.models import ContentType
+from hr.models import Company
 import datetime
 
 class Order(models.Model):
@@ -13,6 +14,10 @@ class Order(models.Model):
         ('completed', 'Завершён'),
         ('cancelled', 'Отменён'),
     ]
+    '''
+    инкапсуляция данных происходит через company
+    '''
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
     client = models.ForeignKey(
         Client,
         on_delete=models.SET_NULL,
@@ -51,7 +56,7 @@ class OrderItem(models.Model):
         ('cancelled', 'Отменен'),
         ('deleted', 'Удален'),
     ]
-
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
     product = models.ForeignKey(
         'products.Product',  # Обновлено: теперь ссылается на Product
         on_delete=models.CASCADE,
@@ -167,6 +172,7 @@ class OrderItemRefund(models.Model):
         related_name='refunds',
         verbose_name='Позиция заказа'
     )
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
     refund_date = models.DateField(auto_now_add=True, verbose_name='Дата возврата')
     reason = models.TextField(blank=True, verbose_name='Причина возврата')
     refund_quantity = models.PositiveIntegerField(verbose_name='Количество к возврату')

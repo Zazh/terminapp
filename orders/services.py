@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from .models import Order, OrderItem
 from products.models import Product
 from cashflow.models import Wallet
+from hr.models import Company
 
 def calculate_order_total(order: Order) -> Decimal:
     """
@@ -48,13 +49,14 @@ def refresh_order(order: Order):
 class OrderService:
     @staticmethod
     @transaction.atomic
-    def create_order(client_id=None) -> Order:
+    def create_order(client_id=None, company=None) -> Order:
         """
         Создаёт новый Order (без позиций). При необходимости
         можно дополнить другими полями.
         """
         order = Order.objects.create(
             client_id=client_id,
+            company=company,
             status='pending',
             total_amount=Decimal('0.00')
         )
@@ -104,6 +106,7 @@ class OrderItemService:
         discount: Decimal = Decimal('0.00'),
         wallet_id: int = None,
         status: str = 'pending',
+        company: Company = None, # фильтруем по компании
     ) -> OrderItem:
         """
         Создаёт новую позицию в заказе.
@@ -111,12 +114,12 @@ class OrderItemService:
         from products.models import PriceList  # если нужно динамически брать цену
 
         try:
-            order = Order.objects.get(pk=order_id)
+            order = Order.objects.get(pk=order_id, company=company)
         except Order.DoesNotExist:
             raise ValidationError(f"Order с id={order_id} не найден.")
 
         try:
-            product = Product.objects.get(pk=product_id)
+            product = Product.objects.get(pk=product_id, company=company)
         except Product.DoesNotExist:
             raise ValidationError(f"Product с id={product_id} не найден.")
 
@@ -131,7 +134,7 @@ class OrderItemService:
         wallet = None
         if wallet_id:
             try:
-                wallet = Wallet.objects.get(pk=wallet_id)
+                wallet = Wallet.objects.get(pk=wallet_id, company=company)
             except Wallet.DoesNotExist:
                 raise ValidationError(f"Wallet с id={wallet_id} не найден.")
 

@@ -3,17 +3,22 @@ from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
+
+from hr.models import CompanyMixin
 from .models import Order, OrderItem, OrderItemRefund
 from .serializers import OrderSerializer, OrderItemSerializer, OrderItemRefundSerializer
 from .services import OrderService, OrderItemService
 
-class OrderViewSet(viewsets.ModelViewSet):
+class OrderViewSet(CompanyMixin, viewsets.ModelViewSet):
     """
     CRUD для заказов.
     """
     permission_classes = [IsAuthenticated]
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
+
+    def get_queryset(self):
+        return Order.objects.filter(company=self.request.user.company)
 
     def create(self, request, *args, **kwargs):
         """
@@ -22,7 +27,10 @@ class OrderViewSet(viewsets.ModelViewSet):
         client_id = request.data.get('client')
         # Можно добавить и другие поля — например, если нужно что-то ещё при создании
 
-        order = OrderService.create_order(client_id=client_id)
+        order = OrderService.create_order(
+            client_id=client_id,
+            company=request.user.company  # Автоматически изолируем данные
+        )
         serializer = self.get_serializer(order)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -65,6 +73,9 @@ class OrderItemViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = OrderItem.objects.all()
     serializer_class = OrderItemSerializer
+
+    def get_queryset(self):
+        return OrderItem.objects.filter(company=self.request.user.company)
 
     def create(self, request, *args, **kwargs):
         """
@@ -139,6 +150,9 @@ class OrderItemViewSet(viewsets.ModelViewSet):
 
 
 class OrderItemRefundViewSet(viewsets.ModelViewSet):
+    def get_queryset(self):
+        return OrderItem.objects.filter(company=self.request.user.company)
+
     permission_classes = [IsAuthenticated]
     queryset = OrderItemRefund.objects.all()
     serializer_class = OrderItemRefundSerializer
