@@ -1,0 +1,155 @@
+- справочник услуг и товаров
+- детали услуг и товаров
+- справочних характеристик
+- стоимость
+
+- корзина / order
+- позиция корзины / order-item
+
+
+from django.db import models
+from django.db.models import Sum, F, DecimalField
+
+
+class Order(models.Model):
+    """
+    Модель заказа.
+    """
+    customer = models.ForeignKey(
+        'clients.Client',
+        on_delete=models.CASCADE,
+        related_name="orders",
+        verbose_name="Клиент"
+    )
+    order_date = models.DateTimeField(auto_now_add=True, verbose_name="Дата заказа")
+    total_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0.00,
+        editable=False,
+        verbose_name="Общая сумма"
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ('pending', 'В ожидании'),
+            ('completed', 'Завершен'),
+            ('cancelled', 'Отменен'),
+        ],
+        default='pending',
+        verbose_name="Статус"
+    )
+
+    def __str__(self):
+        return f"Order #{self.id} - {self.customer.first_name} ({self.total_amount})"
+
+    def calculate_total_amount(self):
+        """
+        Рассчитывает общую сумму заказа.
+        """
+        return self.items.aggregate(
+            total=Sum(F('quantity') * F('price'), output_field=DecimalField())
+        )['total'] or 0.00
+
+    def update_status(self):
+        """
+        Обновляет статус заказа на основе статусов элементов.
+        """
+        items = self.items.all()
+        if items.filter(status='pending').exists():
+            self.status = 'pending'
+        elif items.filter(status='completed').count() == items.count():
+            self.status = 'completed'
+        else:
+            self.status = 'cancelled'
+        self.save()
+
+    def refresh_total_and_status(self):
+        """
+        Обновляет общую сумму и статус заказа.
+        """
+        self.total_amount = self.calculate_total_amount()
+        self.update_status()
+
+
+class OrderItem(models.Model):
+    """
+    Модель элемента заказа.
+    """
+    STATUS_CHOICES = [
+        ('pending', 'В ожидании'),
+        ('completed', 'Завершен'),
+        ('refunded', 'Возврат средств'),
+        ('cancelled', 'Отменен'),
+    ]
+
+    order = models.ForeignKey(
+        Order,
+        on_delete=models.CASCADE,
+        related_name="items",
+        verbose_name="Заказ"
+    )
+    product = models.ForeignKey(
+        'products.Product',
+        on_delete=models.CASCADE,
+        verbose_name="Продукт"
+    )
+    quantity = models.PositiveIntegerField(verbose_name="Количество")
+    price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Цена")
+    wallet = models.ForeignKey(
+        'cashflow.Wallet',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Кошелёк"
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending',
+        verbose_name="Статус"
+    )
+
+    def save(self, *args, **kwargs):
+        if not self.price and self.product:
+            self.price = self.product.price
+        super().save(*args, **kwargs)
+
+    def create_transaction(self):
+        """
+        Создаёт или обновляет транзакцию для завершённого элемента заказа.
+        """
+        from cashflow.models import Transaction, Category
+
+        sales_category = Category.objects.get(id=3)  # Замените на ваш способ получения категории
+        Transaction.objects.update_or_create(
+            order_item=self,
+            defaults={
+                'category': sales_category,
+                'wallet': self.wallet,
+                'amount': self.calculate_amount(),
+                'description': f"Доход от продажи {self.product.name} в заказе #{self.order.id}",
+            },
+        )
+
+    def __str__(self):
+        return f"{self.product.name} x {self.quantity} ({self.wallet.name if self.wallet else 'No Wallet'})"
+
+    def delete_transaction(self):
+        """
+        Удаляет связанную транзакцию, если она существует.
+        """
+        if hasattr(self, 'transaction'):
+            self.transaction.delete()
+
+    def calculate_amount(self):
+        """
+        Рассчитывает сумму элемента заказа.
+        """
+        return self.quantity * self.price
+
+    def can_refund(self):
+        """
+        Проверяет возможность возврата средств.
+        """
+        return self.status == 'completed'

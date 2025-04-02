@@ -1,4 +1,6 @@
-.env
+terminapp/.env
+terminapp/.env.dev
+.env.prod
 
 # Users Doc
 /drafts/

@@ -18,13 +18,13 @@ services:
 
   web:
     build:
-      context: .
+      context: terminapp
       dockerfile: Dockerfile
     container_name: django_web
     volumes:
-      - .:/app
+      - ./terminapp:/app
     env_file:
-      - .env
+      - terminapp/.env
     environment:
       - PYTHONUNBUFFERED=1
     depends_on:
@@ -35,39 +35,34 @@ services:
     labels:
       - "traefik.enable=true"
 
-      # Роутер для главного домена (hero app)
       - "traefik.http.routers.hero.rule=Host(`${DOMAIN}`)"
       - "traefik.http.routers.hero.entrypoints=web"
       - "traefik.http.routers.hero.service=heroService"
       - "traefik.http.services.heroService.loadbalancer.server.port=8001"
       - "traefik.http.services.heroService.loadbalancer.server.scheme=http"
 
-      # Роутер для админки
       - "traefik.http.routers.admin.rule=Host(`admin.${DOMAIN}`)"
       - "traefik.http.routers.admin.entrypoints=web"
       - "traefik.http.routers.admin.service=adminService"
       - "traefik.http.services.adminService.loadbalancer.server.port=8001"
       - "traefik.http.services.adminService.loadbalancer.server.scheme=http"
 
-      # Роутер для API
       - "traefik.http.routers.api.rule=Host(`api.${DOMAIN}`)"
       - "traefik.http.routers.api.entrypoints=web"
       - "traefik.http.routers.api.service=apiService"
       - "traefik.http.services.apiService.loadbalancer.server.port=8001"
       - "traefik.http.services.apiService.loadbalancer.server.scheme=http"
 
-      # Роутер для мультиарендного фронтенда по субдоменам
       - "traefik.http.routers.tenant.rule=HostRegexp(`{subdomain:[a-z0-9-]+}.${DOMAIN}`)"
       - "traefik.http.routers.tenant.entrypoints=web"
       - "traefik.http.routers.tenant.service=apiService"
       - "traefik.http.services.apiService.loadbalancer.server.port=8001"
       - "traefik.http.services.apiService.loadbalancer.server.scheme=http"
 
-
   db:
     image: postgres:15
     env_file:
-      - .env
+      - terminapp/.env
     environment:
       POSTGRES_DB: "${DATABASE_NAME}"
       POSTGRES_USER: "${DATABASE_USER}"

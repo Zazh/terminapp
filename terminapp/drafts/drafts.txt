@@ -1,0 +1,19 @@
+docker compose run web python manage.py createsuperuser
+
+docker compose run web python manage.py startapp accounts
+
+docker compose run web python manage.py makemigrations services
+docker compose run web python manage.py migrate services
+
+docker compose run web python manage.py showmigrations
+
+
+docker exec -it miierp-web-1 python -m django --version
+
+
+docker exec -it miierp-web-1 sh
+    find . -path "*/migrations/*.py" -not -name "__init__.py" -delete
+
+
+
+
