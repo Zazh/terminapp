@@ -40,7 +40,7 @@
             {/if}
         </div>
         <div class="text-center mt-2 w-full">
-            <Button size="xl" class="text-sm cursor-pointer font-bold w-full rounded-full" on:click={handleSubmit}>Восстановить доступ</Button>
+            <Button size="xl" class="text-sm cursor-pointer font-bold w-full rounded-md" on:click={handleSubmit}>Восстановить доступ</Button>
         </div>
     </div>
 </section>
