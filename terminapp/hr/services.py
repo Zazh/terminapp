@@ -31,7 +31,7 @@ def create_company(owner, name, subdomain, billing_plan='BASE'):
     # 2. Создаем базовый департамент "Управленческий отдел"
     default_department = Department.objects.create(
         company=company,
-        name="Управленческий отдел"
+        name="Администратор"
     )
 
     # 3. Создаем роль "Администратор" для компании,

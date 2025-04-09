@@ -33,13 +33,13 @@
     }
 </script>
 
-<section class="max-w-xl mx-auto pt-10">
+<section class="max-w-md mx-auto pt-10">
     <div class="pb-5">
         <h1 class="text-5xl">Регистрация</h1>
     </div>
     <div class="flex flex-wrap gap-4">
         <div class="w-full">
-            <Label for="email" class="mb-2 font-bold">Электронная почта</Label>
+            <Label for="email" class="mb-1 font-bold">Электронная почта</Label>
             <Input
                     type="email"
                     id="email"
@@ -54,7 +54,7 @@
             {/if}
         </div>
         <div class="w-full">
-            <Label for="show-password" class="mb-2 font-bold">Пароль</Label>
+            <Label for="show-password" class="mb-1 font-bold">Пароль</Label>
             <Input id="show-password"
                    type={show ? 'text' : 'password'}
                    placeholder="••••••••••"
@@ -71,7 +71,7 @@
             </Input>
         </div>
         <div class="w-full">
-            <Label for="show-password" class="mb-2 font-bold">Повторите пароль</Label>
+            <Label for="show-password" class="mb-1 font-bold">Повторите пароль</Label>
             <Input id="show-password"
                    type={show ? 'text' : 'password'}
                    placeholder="••••••••••"
@@ -91,7 +91,7 @@
             {/if}
         </div>
         <div class="w-full pt-2">
-            <Button size="md" on:click={handleSubmit}>Зарегистрироваться</Button>
+            <Button size="lg" class="text-md cursor-pointer font-medium" on:click={handleSubmit}>Зарегистрироваться</Button>
         </div>
     </div>
 </section>
