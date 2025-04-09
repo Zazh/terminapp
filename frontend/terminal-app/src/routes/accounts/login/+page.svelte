@@ -77,7 +77,7 @@
                 <label for="remind_me" class="leading-0 text-sm font-semibold cursor-pointer">Запомнить меня</label>
             </span>
             <span>
-                <a href="/account/recovery" class="text-blue-600 hover:text-blue-700 font-semibold text-sm">Забыли пароль?</a>
+                <a href="/accounts/recovery" class="text-blue-600 hover:text-blue-700 font-semibold text-sm">Забыли пароль?</a>
             </span>
         </div>
         <div class="w-full text-center mt-2">

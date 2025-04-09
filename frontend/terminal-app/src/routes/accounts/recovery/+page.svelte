@@ -1,39 +1,25 @@
 <script>
-    import { Label, Input, Button, Checkbox } from 'flowbite-svelte';
-    import { EnvelopeSolid, EyeOutline, EyeSlashOutline } from 'flowbite-svelte-icons';
+    import { Label, Input, Button } from 'flowbite-svelte';
+    import { EnvelopeSolid } from 'flowbite-svelte-icons';
 
     let email = '';
-    let password = '';
-    let show = false;
-
     let emailError = '';
-    let passwordError = '';
-
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     function handleSubmit() {
         emailError = '';
-        passwordError = '';
 
         if (!emailRegex.test(email)) {
             emailError = 'Введите корректный email.';
         }
 
-        if (password.length < 8) {
-            passwordError = 'Пароль должен быть не менее 8 символов.';
-        }
-
-        if (!emailError && !passwordError) {
-            alert('Форма успешно отправлена!');
-            // Здесь можно отправить данные на сервер
-        }
     }
 </script>
 
 <section class="max-w-md mx-auto pt-15">
-    <div class="pb-5 text-center">
+    <div class="pb-5">
         <h1 class="text-[2.5rem] font-semibold">Забыли пароль</h1>
-        <div class="mt-1 flex justify-center gap-2">
+        <div class="mt-1 flex gap-2">
             <span class="text-md font-medium text-gray-600">На почту придет ссылка для сброса пароля</span>
         </div>
     </div>
