@@ -9,9 +9,7 @@
         <span class="whitespace-nowrap text-xl font-semibold text-primary-500">Terminal</span>
     </NavBrand>
     <NavUl class="hidden md:flex gap-4">
-        <NavLi href="/">Главная</NavLi>
-        <NavLi href="/orders">Заказы</NavLi>
-        <NavLi href="/hr">Сотрудники</NavLi>
+<!--        <NavLi href="/">Главная</NavLi>-->
     </NavUl>
     <div class="flex gap-2 items-center">
         <div class="flex flex-row gap-2 items-center">

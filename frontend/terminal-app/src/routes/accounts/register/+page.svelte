@@ -1,5 +1,5 @@
 <script>
-    import { Label, Input, Button, Alert } from 'flowbite-svelte';
+    import { Label, Input, Button } from 'flowbite-svelte';
     import { EnvelopeSolid, EyeOutline, EyeSlashOutline } from 'flowbite-svelte-icons';
 
     let email = '';
@@ -33,9 +33,13 @@
     }
 </script>
 
-<section class="max-w-md mx-auto pt-10">
-    <div class="pb-5">
-        <h1 class="text-5xl">Регистрация</h1>
+<section class="max-w-md mx-auto pt-15">
+    <div class="pb-5 text-center">
+        <h1 class="text-[2.5rem] font-semibold">Регистрация</h1>
+        <div class="mt-1 flex justify-center gap-2">
+            <span class="text-md font-medium text-gray-600">Уже есть аккаунта?</span>
+            <a href="/accounts/login" class="text-blue-600 hover:text-blue-700 font-medium text-md">Войти</a>
+        </div>
     </div>
     <div class="flex flex-wrap gap-4">
         <div class="w-full">
@@ -91,7 +95,7 @@
             {/if}
         </div>
         <div class="w-full pt-2">
-            <Button size="lg" class="text-md cursor-pointer font-medium" on:click={handleSubmit}>Зарегистрироваться</Button>
+            <Button size="xl" class="text-sm cursor-pointer font-bold w-full rounded-full" on:click={handleSubmit}>Зарегистрироваться</Button>
         </div>
     </div>
 </section>

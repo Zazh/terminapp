@@ -4,7 +4,6 @@
 
     let email = '';
     let password = '';
-    let confirmPassword = '';
     let show = false;
 
     let emailError = '';
@@ -22,8 +21,6 @@
 
         if (password.length < 8) {
             passwordError = 'Пароль должен быть не менее 8 символов.';
-        } else if (password !== confirmPassword) {
-            passwordError = 'Пароли не совпадают.';
         }
 
         if (!emailError && !passwordError) {
@@ -38,7 +35,7 @@
         <h1 class="text-[2.5rem] font-semibold">С возвращением!</h1>
         <div class="mt-1 flex justify-center gap-2">
             <span class="text-md font-medium text-gray-600">Нет аккаунта?</span>
-            <a href="/account/register" class="text-blue-600 font-medium text-md">Зарегестрируйтесь сейчас</a>
+            <a href="/accounts/register" class="text-blue-600 hover:text-blue-700 font-medium text-md">Зарегестрируйтесь сейчас</a>
         </div>
     </div>
     <div class="flex flex-wrap gap-4">
@@ -80,7 +77,7 @@
                 <label for="remind_me" class="leading-0 text-sm font-semibold cursor-pointer">Запомнить меня</label>
             </span>
             <span>
-                <a href="account/forgot" class="text-blue-600 font-semibold text-sm">Забыли пароль?</a>
+                <a href="/account/recovery" class="text-blue-600 hover:text-blue-700 font-semibold text-sm">Забыли пароль?</a>
             </span>
         </div>
         <div class="w-full text-center mt-2">
