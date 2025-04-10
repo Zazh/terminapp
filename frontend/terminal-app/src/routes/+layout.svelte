@@ -4,7 +4,7 @@
 
     let { children } = $props();
 </script>
-<nav class="my-custom-navbar bg-blend-lighten px-4 py-2 flex justify-between items-center">
+<nav class="my-custom-navbar bg-blend-lighten px-4 py-2 flex justify-between items-center fixed z-10 w-full">
     <NavBrand href="/">
         <span class="whitespace-nowrap text-xl font-semibold text-primary-500">Terminal</span>
     </NavBrand>

@@ -16,7 +16,7 @@
     }
 </script>
 
-<section class="max-w-md mx-auto pt-15">
+<section class="max-w-md mx-auto pt-[15rem]">
     <div class="pb-5">
         <h1 class="text-[2.5rem] font-semibold">Забыли пароль</h1>
         <div class="mt-1 flex gap-2">

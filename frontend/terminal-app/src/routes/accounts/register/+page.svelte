@@ -28,18 +28,13 @@
 
         if (!emailError && !passwordError) {
             alert('Форма успешно отправлена!');
-            // Здесь можно отправить данные на сервер
         }
     }
 </script>
 
-<section class="max-w-md mx-auto pt-15">
-    <div class="pb-5 text-center">
-        <h1 class="text-[2.5rem] font-semibold">Регистрация</h1>
-        <div class="mt-1 flex justify-center gap-2">
-            <span class="text-md font-medium text-gray-600">Уже есть аккаунта?</span>
-            <a href="/accounts/login" class="text-blue-600 hover:text-blue-700 font-medium text-md">Войти</a>
-        </div>
+<section class="max-w-md mx-auto pt-[15rem]">
+    <div class="pb-5">
+        <h1 class="text-[3rem] font-semibold">Регистрация</h1>
     </div>
     <div class="flex flex-wrap gap-4">
         <div class="w-full">
@@ -74,9 +69,11 @@
                 </button>
             </Input>
         </div>
+
+        {#if password}
         <div class="w-full">
-            <Label for="show-password" class="mb-1 font-bold">Повторите пароль</Label>
-            <Input id="show-password"
+            <Label for="confirm-password" class="mb-1 font-bold">Повторите пароль</Label>
+            <Input id="confirm-password"
                    type={show ? 'text' : 'password'}
                    placeholder="••••••••••"
                    bind:value={confirmPassword}
@@ -94,8 +91,17 @@
                 <p class="text-sm text-red-600 mt-1">{passwordError}</p>
             {/if}
         </div>
+        {/if}
+
         <div class="w-full pt-2">
-            <Button size="xl" class="text-sm cursor-pointer font-bold w-full rounded-full" on:click={handleSubmit}>Зарегистрироваться</Button>
+            <Button size="xl" class="text-sm cursor-pointer font-bold w-full rounded-md" on:click={handleSubmit}>Зарегистрироваться</Button>
+        </div>
+
+        <div class="w-full text-center mt-5">
+            <div class="pt-5 flex justify-center gap-2 border-gray-200 border-t-1">
+                <span class="text-md font-medium text-gray-600">Уже есть аккаунта?</span>
+                <a href="/accounts/login" class="text-blue-600 hover:text-blue-700 font-medium text-md">Войти</a>
+            </div>
         </div>
     </div>
 </section>

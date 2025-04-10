@@ -30,13 +30,9 @@
     }
 </script>
 
-<section class="max-w-md mx-auto pt-15">
-    <div class="pb-5 text-center">
-        <h1 class="text-[2.5rem] font-semibold">С возвращением!</h1>
-        <div class="mt-1 flex justify-center gap-2">
-            <span class="text-md font-medium text-gray-600">Нет аккаунта?</span>
-            <a href="/accounts/register" class="text-blue-600 hover:text-blue-700 font-medium text-md">Зарегестрируйтесь сейчас</a>
-        </div>
+<section class="max-w-md mx-auto pt-[15rem]">
+    <div class="pb-5">
+        <h1 class="text-[3rem] font-semibold">С возвращением!</h1>
     </div>
     <div class="flex flex-wrap gap-4">
         <div class="w-full">
@@ -81,7 +77,14 @@
             </span>
         </div>
         <div class="w-full text-center mt-2">
-            <Button size="xl" class="text-sm cursor-pointer font-bold w-full rounded-full" on:click={handleSubmit}>Войти</Button>
+            <Button size="xl" class="text-sm cursor-pointer font-bold w-full rounded-md" on:click={handleSubmit}>Войти</Button>
+        </div>
+
+        <div class="w-full text-center mt-5">
+            <div class="pt-5 flex justify-center gap-2 border-gray-200 border-t-1">
+                <span class="text-md font-medium text-gray-600">Нет аккаунта?</span>
+                <a href="/accounts/register" class="text-blue-600 hover:text-blue-700 font-medium text-md">Зарегестрируйтесь сейчас</a>
+            </div>
         </div>
     </div>
 </section>

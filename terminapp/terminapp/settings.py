@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'account',
     'rest_framework',
     'django_filters',
+    'corsheaders',
     'hr',
     'hero',
     'admin_restrict',
@@ -82,16 +83,24 @@ AUTHENTICATION_BACKENDS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+
+    # corsheaders
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
+
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 
+
     'hr.middleware.TenantMiddleware',  # генерация поддоменов для компаний
     'hero.middleware.SwitchUrlConfMiddleware',  # Переключатель URLconf для главного домена
     'admin_restrict.middleware.AdminRestrictMiddleware',  # Ограничение доступа к /admin
 ]
+
+CORS_ALLOW_ALL_ORIGINS = True
 
 ROOT_URLCONF = 'terminapp.urls'
 
